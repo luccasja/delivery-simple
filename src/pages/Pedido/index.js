@@ -1,12 +1,52 @@
-import React from 'react';
+import React, {useState} from 'react'
 import Logo from '../../img/Logo.jpeg'
 import Pastel from '../../img/pastel.jpg'
 import Add from '../../img/add.png'
-import {Button, Container, Row, Col, Image} from 'react-bootstrap';
+import {Button, Container, Row, Col, Image, Modal, InputGroup, FormControl} from 'react-bootstrap'
 
 import './style.css'
 
 export default function Pedido (){
+    const [showModal, setShowModal] = useState(false)
+    const [nomeProduto, setNomeProduto] = useState('Nome do Produto')
+    const [descricao, setDescricao] = useState('Descrição')
+    const [valor, setValor] = useState(3)
+    const [valorTotal, setValorTotal] = useState(3)
+    const [qnt, setQnt] = useState(1)
+    const [listaProduto, setListaProduto] = useState([])
+
+    function handleCloseModal(){
+        setShowModal(false)
+    }
+
+    function handleShowModal(){
+        setShowModal(true)
+    }
+
+    function handleIncremet(){
+        let quantidade = qnt
+        quantidade++
+
+        let valorUnitario = valor
+        let novoValor = (quantidade*valorUnitario)
+
+        setQnt(quantidade)
+        setValorTotal(novoValor)
+    }
+
+    function handleDecremet(){
+        let quantidade = qnt
+        if(qnt==1){
+            alert('Quantidade minima 1')
+            return
+        }
+        quantidade--
+        let valorUnitario = valor
+        let novoValor = (quantidade*valorUnitario)
+
+        setQnt(quantidade)
+        setValorTotal(novoValor)
+    }
 
     return(
         <Container>
@@ -28,11 +68,11 @@ export default function Pedido (){
                     </Row>
                     <Row style={{margin:0}}>
                         <Col style={{padding:0,  overflow:'auto'}}>
-                            <ul className="lista-produtos" style={{padding:0, width:'96%', height:400}}>
+                            <ul style={{padding:0, width:'96%', height:400}}>
                                 <li style={{listStyle:'none'}}>
-                                    <Row style={{borderBottomStyle:'solid', borderBottomColor:'#e3e3e3', borderBottomWidth:0.5, paddingTop:5, paddingBottom:5}}>
+                                    <Row onClick={()=> setShowModal(true)} style={{cursor:'pointer', borderBottomStyle:'solid', borderBottomColor:'#e3e3e3', borderBottomWidth:0.5, paddingTop:5, paddingBottom:5}}>
                                         <Col xs='3' style={{padding:5}}>
-                                            <Image src={Pastel} roundedCircle style={{height:50, width:50}} alt='logo' />
+                                            <Image src={Pastel} roundedCircle style={{height:50, width:50}} alt='Pastel de Carne' />
                                         </Col>
                                         <Col xs='5' style={{ }}>
                                             <p><strong>Pastel de Carne</strong></p>
@@ -46,7 +86,6 @@ export default function Pedido (){
                                         </Col>
                                     </Row>
                                 </li>
-                                
                             </ul>
                         </Col>
                     </Row>
@@ -62,42 +101,53 @@ export default function Pedido (){
                 </Col>
                 <Col md='2'></Col>
             </Row>
+            <Modal show={showModal} onHide={handleCloseModal}>
+                <Modal.Header closeButton/>
+                <Modal.Body>
+                    <Row style={{justifyContent:'center', alignItems:'center', marginBottom:20}}>
+                        <Image src={Pastel} roundedCircle style={{height:100, width:100}} alt='Pastel de Carne' />
+                    </Row>
+                    <Row style={{justifyContent:'center', alignItems:'center'}}>
+                        <p><strong>{nomeProduto}</strong></p>
+                    </Row>
+                    <Row style={{justifyContent:'center', alignItems:'center'}}>
+                        <p>{descricao}</p>
+                    </Row>
+                    <Row style={{justifyContent:'center', alignItems:'center', marginTop:15, marginBottom:15}}>
+                        <p><strong>R$ {valor}</strong></p>
+                    </Row>
+                    <Row style={{justifyContent:'center', alignItems:'center'}}>
+                        <p><strong>Deseja acrescentar observações?</strong></p>
+                        <InputGroup>
+                            <FormControl as="textarea" aria-label="With textarea" maxLength={120} height={70} style={{resize: 'none' , margin:20, marginTop:0, background:'#F5F5F5', borderColor:'#E3E3E3'}}/>
+                        </InputGroup>
+                    </Row>
+                    <Row style={{marginTop:5, marginBottom:5}}>
+                        <Col xs='3'/>
+                            <Col xs='2' style={{padding:0}}>
+                                <Button onClick={handleDecremet} style={{width:'100%',borderStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3', background:'#FFF', color:'#707070', borderRadius:0, borderBottomLeftRadius:8, borderTopLeftRadius:8}}>
+                                    -
+                                </Button>
+                            </Col>
+                            <Col xs='2' style={{padding:0}}>
+                                <p style={{textAlign:'center', height:'100%', paddingTop:7, fontWeight:'bold', borderBottomStyle:'solid', borderTopStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3'}}>
+                                    {qnt}
+                                </p>
+                            </Col>
+                            <Col xs='2' style={{padding:0}}>
+                                <Button onClick={handleIncremet} style={{width:'100%',borderStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3', background:'#FFF', color:'#F97A7A', borderRadius:0, borderBottomRightRadius:8, borderTopRightRadius:8}}>
+                                    +
+                                </Button>
+                            </Col>
+                        <Col xs='3'/>
+                    </Row>
+                </Modal.Body>
+                <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
+                <Button variant="danger" onClick={handleCloseModal}>
+                    Adicionar R$ {valorTotal}
+                </Button>
+                </Modal.Footer>
+            </Modal>
         </Container>
-    )
-
-
-
-
-
-    return(
-        <div className='container-geral'>
-            <div className="cabecalho">
-                <img className='img-logo' src={Logo} alt='logo'/>
-                <div>
-                    <p className='cabecalho-titulo'><strong>Pastelaria Fina Massa</strong></p>
-                    <p className='cabecalho-subtitulo'>Novo Pedido</p>
-                </div>
-                <div/>
-            </div>
-            <div className='separador'/>
-            <ul className="lista-produtos">
-                <li>
-                    <div className='container-item'>
-                        <div className='container-img-produto'>
-                            <img className='img-produto' src={Logo} alt='produto'/>
-                        </div>
-                        <div className='container-descricao'>
-                            <p><strong>Pastel de Carne</strong></p>
-                            <p>Carne, Cebola e Cheiro Verde</p>
-                        </div>
-                        <div className='container-valor'>
-                            <p><strong>R$ 3,00</strong></p>
-                        </div>
-                    </div>
-                    <div className='separador-item'/>
-                </li>
-            </ul>
-            <button>Ir para a Cesta   -  R$13,50</button>
-        </div>
     )
 };
