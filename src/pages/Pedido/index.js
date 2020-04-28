@@ -36,8 +36,7 @@ export default function Pedido (){
 
     function handleDecremet(){
         let quantidade = qnt
-        if(qnt==1){
-            alert('Quantidade minima 1')
+        if(qnt===1){
             return
         }
         quantidade--
