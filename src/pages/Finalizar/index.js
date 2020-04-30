@@ -172,40 +172,32 @@ export default function Finalizar(){
                         </Col>
                     </Row>
                     <Row>
-                        <Col xs='12'>
-                            <Row>
-                                <Col xs='12'>
-                                    <p><strong>Endereço</strong></p>
-                                    <input placeholder='Rua' style={{width:'100%'}}/>
-                                </Col>
-                            </Row>
-                            <Row>
-                                <Col xs='6'  style={{paddingLeft:15}}><input placeholder='Número'/></Col>
-                                <Col xs='6' style={{paddingLeft:25}}><input placeholder='Bairro'/></Col>
-                            </Row>
-                            <Row>
-                                <Col>
-                                    <input placeholder='Complemento' style={{width:'100%'}}/>
-                                </Col>
-                            </Row>
+                        <Col>
+                            <p><strong>Endereço</strong></p>
+                            <input placeholder='Rua' style={{width:'100%'}}/>
+                            <input placeholder='Número' style={{width:'100%'}}/>
+                            <input placeholder='Bairro' style={{width:'100%'}}/>
+                            <input placeholder='Complemento' style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row>
-                        <Col xs='6'>
+                        <Col>
                             <p><strong>Forma de Pagamento</strong></p>
-                            <select style={{width:160}}>
+                            <select style={{width:'100%'}}>
                                 <option>Dinheiro</option>
                                 <option>Cartão</option>
                             </select>
                         </Col>
-                        <Col xs='6'>
+                    </Row>
+                    <Row>
+                        <Col>
                             <p><strong>Troco Para?</strong></p>
-                            <input placeholder='0,00' type='number' style={{paddingLeft:20}}/>
+                            <input placeholder='0,00' type='number' style={{width:'100%'}}/>
                         </Col>
                     </Row>
                 </Modal.Body>
                 <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
-                    <Button variant="danger" style={{width:200}}>
+                    <Button variant="danger" style={{width:200}} onClick={()=> history.push('/')}>
                         Enviar Pedido
                     </Button>
                 </Modal.Footer>

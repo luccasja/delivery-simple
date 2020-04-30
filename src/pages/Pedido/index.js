@@ -80,7 +80,7 @@ export default function Pedido (){
                                             <p style={{fontSize:15}}>Carne, Cebola e Cheiro Verde</p>
                                         </Col>
                                         <Col xs='2' style={{padding:15}}>
-                                            <p style={{fontSize:20}}><strong>3,00</strong></p>
+                                            <p style={{fontSize:20}}><strong>{Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(3)}</strong></p>
                                         </Col>
                                         <Col xs='2' style={{paddingTop:18}}>
                                         <Image src={Add} roundedCircle style={{height:25, width:25}} alt='Adicionar' />
@@ -115,7 +115,7 @@ export default function Pedido (){
                         <p>{descricao}</p>
                     </Row>
                     <Row style={{justifyContent:'center', alignItems:'center', marginTop:15, marginBottom:15}}>
-                        <p><strong>R$ {valor}</strong></p>
+                        <p><strong>{Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(valor)}</strong></p>
                     </Row>
                     <Row style={{justifyContent:'center', alignItems:'center'}}>
                         <p><strong>Deseja acrescentar observações?</strong></p>
@@ -145,7 +145,7 @@ export default function Pedido (){
                 </Modal.Body>
                 <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
                 <Button variant="danger" onClick={handleCloseModal}>
-                    Adicionar R$ {valorTotal}
+                    Adicionar {Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(valorTotal)}
                 </Button>
                 </Modal.Footer>
             </Modal>
