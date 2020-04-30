@@ -2,6 +2,7 @@ import React, {useState} from 'react'
 import Logo from '../../img/Logo.jpeg'
 import Pastel from '../../img/pastel.jpg'
 import Add from '../../img/add.png'
+import {useHistory} from 'react-router-dom'
 import {Button, Container, Row, Col, Image, Modal, InputGroup, FormControl} from 'react-bootstrap'
 
 import './style.css'
@@ -14,6 +15,7 @@ export default function Pedido (){
     const [valorTotal, setValorTotal] = useState(3)
     const [qnt, setQnt] = useState(1)
     const [listaProduto, setListaProduto] = useState([])
+    let history = useHistory()
 
     function handleCloseModal(){
         setShowModal(false)
@@ -91,7 +93,7 @@ export default function Pedido (){
                     <Row>
                         <Col/>
                         <Col md='6'>
-                            <Button style={{marginTop:10, height:45}}>
+                            <Button style={{marginTop:10, height:45}} onClick={()=> history.push('/finalizar')}>
                                 Ir para a Cesta R$13,00
                             </Button>
                         </Col>

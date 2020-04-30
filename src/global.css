@@ -10,3 +10,23 @@ p{
     padding: 0px;
     color: #707070;
 }
+
+input{
+    border-radius: 8px;
+    border-width: 0.5px;
+    border-style: solid;
+    border-color: #e3e3e3;
+    height: 40px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+select{
+    border-radius: 8px;
+    border-width: 0.5px;
+    border-style: solid;
+    border-color: #e3e3e3;
+    height: 40px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
