@@ -3,17 +3,17 @@
 module.exports = {
 
   development: {
-    client: 'mysql',
+    client: 'mysql2',
     connection: {
-      database: 'deliveryapp',
-      user:     'deliveryapp',
+      database: 'deliverydb',
+      user:     'deliverydb',
       password: 'deliveryapp',
-      host:'192.168.0.120',
-      port:3306
+      host:'mysql669.umbler.com',
+      port:41890
     },
     pool: {
       min: 0,
-      max: 100
+      max: 25
     },
     migrations: {
       directory: './src/database/migrations'
@@ -37,18 +37,20 @@ module.exports = {
   },
 
   production: {
-    client: 'postgresql',
+    client: 'mysql2',
     connection: {
-      database: 'my_db',
-      user:     'username',
-      password: 'password'
+      database: 'deliverydb',
+      user:     'deliverydb',
+      password: 'deliveryapp',
+      host:'mysql669.umbler.com',
+      port:41890
     },
     pool: {
-      min: 2,
-      max: 10
+      min: 0,
+      max: 25
     },
     migrations: {
-      tableName: 'knex_migrations'
+      directory: './src/database/migrations'
     }
   }
 

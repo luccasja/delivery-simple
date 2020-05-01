@@ -1,9 +1,8 @@
-
 exports.up = function(knex) {
-    knex.schema.hasTable('produto').then((exists)=>{
+    return knex.schema.hasTable('produto').then((exists)=>{
         if(!exists){
             return(knex.schema.createTable('produto',(table)=>{
-                table.increments('id').primary()
+                table.increments();
                 table.string('nome').notNullable();
                 table.string('descricao', 120).notNullable();
                 table.double('valor_unitario').notNullable();

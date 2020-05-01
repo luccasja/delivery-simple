@@ -1,9 +1,8 @@
-
 exports.up = function(knex) {
-    knex.schema.hasTable('pedido').then((exists)=>{
+    return knex.schema.hasTable('pedido').then((exists)=>{
         if(!exists){
             return(knex.schema.createTable('pedido',(table)=>{
-                table.increments('id').primary()
+                table.increments();
                 table.string('nome_cliente').notNullable();
                 table.string('telefone', 14).notNullable();
                 table.string('endereco_entrega').notNullable();

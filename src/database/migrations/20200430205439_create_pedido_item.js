@@ -1,6 +1,5 @@
-
 exports.up = function(knex) {
-    knex.schema.hasTable('pedido_item').then((exists)=>{
+    return knex.schema.hasTable('pedido_item').then((exists)=>{
         if(!exists){
             return(knex.schema.createTable('pedido_item',(table)=>{
                 table.increments('id').primary()
@@ -11,8 +10,8 @@ exports.up = function(knex) {
                 table.integer('quantidade').notNullable();
                 table.integer('posicao').notNullable();
                 table.string('observacoes',150);
-                table.foreign('id_produto').references('produto.id');
-                table.foreign('id_pedido').references('pedido.id');
+                table.foreign('id_produto').references('id').inTable('produto');
+                table.foreign('id_pedido').references('id').inTable('pedido');
             }))
         }
     })
