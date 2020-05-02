@@ -12,13 +12,17 @@ const Home = () => {
         history.push('/pedido')
     }
 
+    function handleLogin(){
+        history.push('/login')
+    }
+
     return(
         <Container>
             <Row style={{textAlign:'center'}}>
                 <Col/>
                 <Col md='8' style={{background:'#FFF', padding:40, paddingTop:15, borderRadius:8}}>
                     <Row>
-                        <Button style={{background:'#FFF', width:50, height:40, borderColor:'#e3e3e3'}}>
+                        <Button style={{background:'#FFF', width:50, height:40, borderColor:'#e3e3e3'}} onClick={handleLogin}>
                             <p><span><Image src={login} style={{height:20, width:20}} alt='logo' /></span></p>
                         </Button>
                     </Row>
@@ -31,7 +35,7 @@ const Home = () => {
                             <p>Sexta, Domingo e Feriados das 16:00 às 22:00</p>
                         </Col>
                     </Row>
-                    <Button style={{background:'#FF414D', border:0, width:250, height:45, borderRadius:8 }} onClick={handleNovoPedido}>Novo Pedido</Button>
+                    <Button style={{background:'#FF414D', border:0, width:250, height:50, borderRadius:8 }} onClick={handleNovoPedido}>Novo Pedido</Button>
                 </Col>
                 <Col/>
             </Row>
