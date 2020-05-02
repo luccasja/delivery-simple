@@ -24,20 +24,12 @@ export default function Pedido (){
 
     useEffect(()=>{
         if(location.state != null){
-            if(location.state.qntItens > 0){
-                setBtnCarrinhoVisible(true)
-            }
+            let car = carrinho
+            setValorTotal(SomarItens(car))
+            setBtnCarrinhoVisible(true)
+            setCarrinho(location.state)
         }
-    },[])
-
-
-    let refs = useRef(()=>{
-        let referencias = []
-        for (let idx = 0; idx < itens.length; idx++) {
-            referencias.push(createRef())
-        }
-        return referencias
-    })
+    },[carrinho])
 
     const [itens, setItens] = useState([
         {
@@ -89,9 +81,6 @@ export default function Pedido (){
         setShowModal(false)
     }
 
-    function handleShowModal(){
-        setShowModal(true)
-    }
 
     function handleIncremet(){
         if(qnt === 20){
@@ -169,7 +158,7 @@ export default function Pedido (){
             total = total+(quantidade*preco)
         });
 
-        return total
+        return Moeda(total)
     }
 
     function LimitarString(value = '', maxLength = 0){
@@ -234,8 +223,8 @@ export default function Pedido (){
                         <Row>
                             <Col/>
                             <Col md='8'>
-                                <Button  variant="danger" style={{width:300}} onClick={()=> history.push('/finalizar', carrinho)}>
-                                    Ir para o Carrinho {Moeda(valorTotal)}
+                                <Button  variant="danger" style={{width:300}} onClick={()=> history.replace('/finalizar', carrinho)}>
+                                    Ir para o Carrinho <span>{valorTotal}</span>
                                 </Button>
                             </Col>
                             <Col/>

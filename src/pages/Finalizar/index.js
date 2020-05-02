@@ -7,10 +7,12 @@ import { Container, Row, Col, Image, Button, Modal } from 'react-bootstrap';
 export default function Finalizar(){
     const [showModal, setShowModal] = useState(false)
     const [carrinho, setCarrinho] = useState([])
-    const totalref = useRef()
+    const totalRef = useRef()
+    const totalPecaRef = useRef()
     const history = useHistory()
     const location = useLocation()
-    let refsArray = [];
+    let inputRefs = [];
+    let totalItemRefs = [];
     
     useEffect(()=>{
         if(location.state != null){
@@ -31,7 +33,29 @@ export default function Finalizar(){
         lista[idx].qnt = lista[idx].qnt+1;
         ref.textContent = lista[idx].qnt
         setCarrinho(lista)
-        totalref.current.textContent = Moeda(SomarItens(lista))
+        totalRef.current.textContent = SomarItens(lista)
+        totalPecaRef.current.textContent = SomarQntPecas(lista)
+        totalItemRefs[idx].textContent = CalcularItem(idx, lista)
+    }
+
+    function UpdateArrayDecrement(idx, ref){
+        let lista = carrinho
+        
+        if(lista[idx].qnt === 1){
+            return
+        }
+
+        lista[idx].qnt = lista[idx].qnt-1;
+        ref.textContent = lista[idx].qnt
+        setCarrinho(lista)
+        totalRef.current.textContent = Moeda(SomarItens(lista))
+        totalPecaRef.current.textContent = SomarQntPecas(lista)
+        totalItemRefs[idx].textContent = CalcularItem(idx, lista)
+
+    }
+
+    function CalcularItem(idx, lista){
+        return Moeda(lista[idx].qnt*lista[idx].valor)
     }
 
     function SomarItens(lista){
@@ -46,21 +70,30 @@ export default function Finalizar(){
             total = total+(quantidade*preco)
         });
 
+        return Moeda(total)
+    }
+
+    function SomarQntPecas(lista){
+        let list = lista
+        let quantidade = 0.0
+        let total = 0
+
+        list.forEach(item => {
+            quantidade = item.qnt
+            total = total+quantidade
+        });
+
         return total
     }
 
-    function UpdateArrayDecrement(idx, ref){
-        let lista = carrinho
-        
-        if(lista[idx].qnt === 1){
-            return
+    function LimitarString(value = '', maxLength = 0){
+        if(value.length > maxLength){
+            return value.substring(0, maxLength)+'...'
         }
-
-        lista[idx].qnt = lista[idx].qnt-1;
-        ref.textContent = lista[idx].qnt
-        setCarrinho(lista)
-        totalref.current.textContent = Moeda(SomarItens(lista))
+        return value
     }
+
+    
 
     function Moeda(value){
         return Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(value)
@@ -89,31 +122,44 @@ export default function Finalizar(){
                         {
                             carrinho.map((item, idx)=>{
                                 return(
-                                    <Row key={idx} style={{justifyContent:'center', alignItems:'center',padding:0, margin:0, cursor:'pointer', borderBottomStyle:'solid', borderBottomColor:'#e3e3e3', borderBottomWidth:0.5, paddingTop:5, paddingBottom:5}}>
+                                    <Row key={idx} style={{justifyContent:'center', alignItems:'center',padding:0, margin:0, borderBottomStyle:'solid', borderBottomColor:'#e3e3e3', borderBottomWidth:0.5, paddingTop:5, paddingBottom:5}}>
                                         <Col xs='2' my-auto="true">
                                             <Image src={Pastel} my-auto="true" roundedCircle style={{height:50, width:50}} alt='imagem do produto' />
                                         </Col>
                                         <Col xs='6' my-auto="true" style={{textAlign:'start'}}>
                                             <p><strong>{item.nomeProduto}</strong></p>
-                                            <p style={{fontSize:13}}>{item.descricao}</p>
+                                            <p style={{fontSize:13}}>{LimitarString(item.descricao, 30)}</p>
                                             <p><strong>{Moeda(item.valor)}</strong></p>
+                                            {item.observacao !== '' 
+                                                ? <p style={{fontSize:13}}><strong>Observações: </strong></p>
+                                                : <p/>
+                                            }
+                                            {item.observacao !== '' 
+                                                ? <p style={{fontSize:13}}><span>{LimitarString(item.observacao, 30)}</span></p>
+                                                : <p/>
+                                            }
                                         </Col>
                                         <Col xs='4' my-auto="true">
                                             <Row>
                                                 <Col xs='5' style={{padding:0}}>
-                                                    <Button onClick={()=> UpdateArrayDecrement(idx, refsArray[idx])} style={{width:'100%',borderStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3', background:'#FFF', color:'#707070', borderRadius:0, borderBottomLeftRadius:8, borderTopLeftRadius:8}}>
+                                                    <Button onClick={()=> UpdateArrayDecrement(idx, inputRefs[idx])} style={{width:'100%',borderStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3', background:'#FFF', color:'#707070', borderRadius:0, borderBottomLeftRadius:8, borderTopLeftRadius:8}}>
                                                         -
                                                     </Button>
                                                 </Col>
                                                 <Col xs='2' style={{padding:0}}>
-                                                    <p ref={ref => {refsArray[idx] = ref;}}  style={{textAlign:'center', height:'100%', paddingTop:7, fontWeight:'bold', borderBottomStyle:'solid', borderTopStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3'}}>
+                                                    <p ref={inputRef => {inputRefs[idx] = inputRef}}  style={{textAlign:'center', height:'100%', paddingTop:7, fontWeight:'bold', borderBottomStyle:'solid', borderTopStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3'}}>
                                                         {item.qnt}
                                                     </p>
                                                 </Col>
                                                 <Col xs='5' style={{padding:0}}>
-                                                    <Button onClick={()=> UpdateArrayIncrement(idx, refsArray[idx])} style={{width:'100%',borderStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3', background:'#FFF', color:'#F97A7A', borderRadius:0, borderBottomRightRadius:8, borderTopRightRadius:8}}>
+                                                    <Button onClick={()=> UpdateArrayIncrement(idx, inputRefs[idx])} style={{width:'100%',borderStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3', background:'#FFF', color:'#F97A7A', borderRadius:0, borderBottomRightRadius:8, borderTopRightRadius:8}}>
                                                         +
                                                     </Button>
+                                                </Col>
+                                            </Row>
+                                            <Row style={{marginTop:10}}>
+                                                <Col>
+                                                    <p> T: <strong ref={totalItemRef => {totalItemRefs[idx] = totalItemRef}}>{Moeda(item.qnt*item.valor)}</strong></p>
                                                 </Col>
                                             </Row>
                                         </Col>
@@ -123,20 +169,24 @@ export default function Finalizar(){
                         }
                         </Col>
                     </Row>
+                    <Row>
+                        <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0}}/>
+                    </Row>
                     <Row style={{justifyContent:'center', alignItems:'center', borderBottomStyle:'solid', borderBottomColor:'#e3e3e3', borderBottomWidth:0.5, paddingBottom:10, marginBottom:10, marginTop:10}}>
-                        <Button variant="danger" style={{width:200}} onClick={()=> history.push('/pedido', location.state)}>
+                        <Button variant="danger" style={{width:250, height:50}} onClick={()=> history.replace('/pedido', carrinho)}>
                             Adicionar Mais Itens
                         </Button>
                     </Row>
                     <Row style={{justifyContent:'center', alignItems:'center', borderBottomStyle:'solid', borderBottomColor:'#e3e3e3', borderBottomWidth:0.5, paddingBottom:10, marginBottom:10}}>
                         <Col>
                             <p><strong>Totais</strong></p>
-                            <p><strong>Quantidade de Itens: </strong>{carrinho.length}</p>
-                            <p><strong>Total: </strong><span ref={totalref}>{Moeda(SomarItens(carrinho))}</span></p>
+                            <p><span>Itens incluso: </span><strong>{carrinho.length}</strong></p>
+                            <p><span>Quantidade de Peças: </span><strong ref={totalPecaRef}>{SomarQntPecas(carrinho)}</strong></p>
+                            <p><span>Subtotal: </span><strong ref={totalRef}>{SomarItens(carrinho)}</strong></p>
                         </Col>
                     </Row>
                     <Row  style={{justifyContent:'center', alignItems:'center'}}>
-                        <Button variant="danger" style={{width:200}} onClick={()=> setShowModal(true)}>
+                        <Button variant="danger" style={{width:250, height:50}} onClick={()=> setShowModal(true)}>
                             Finalizar
                         </Button>
                     </Row>
