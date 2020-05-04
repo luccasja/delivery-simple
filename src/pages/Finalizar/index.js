@@ -7,12 +7,15 @@ import { Container, Row, Col, Image, Button, Modal } from 'react-bootstrap';
 export default function Finalizar(){
     const [showModal, setShowModal] = useState(false)
     const [carrinho, setCarrinho] = useState([])
+    const [confirmShow, setConfirmShow] = useState(false)
+    const [produtoSelecionado, setProdutoSelecionado] = useState('')
     const totalRef = useRef()
     const totalPecaRef = useRef()
     const history = useHistory()
     const location = useLocation()
-    let inputRefs = [];
-    let totalItemRefs = [];
+    let inputRefs = []
+    let totalItemRefs = []
+    let nomeProdutoRefs = []
     
     useEffect(()=>{
         if(location.state != null){
@@ -38,36 +41,60 @@ export default function Finalizar(){
         totalItemRefs[idx].textContent = CalcularItem(idx, lista)
     }
 
-    function UpdateArrayDecrement(idx, ref){
+    function UpdateArrayDecrement(idx, ref, id_produto){
         let lista = carrinho
         
-        if(lista[idx].qnt === 1){
+        if(lista[idx].quantidade === 1){
+            let nome = nomeProdutoRefs[idx].textContent
+            setProdutoSelecionado({id_produto, nome}) 
+            ExcluirItem(id_produto)
+
+            
             return
         }
 
-        lista[idx].qnt = lista[idx].qnt-1;
-        ref.textContent = lista[idx].qnt
+        lista[idx].quantidade = lista[idx].quantidade-1;
+        ref.textContent = lista[idx].quantidade
         setCarrinho(lista)
-        totalRef.current.textContent = Moeda(SomarItens(lista))
+        totalRef.current.textContent = SomarItens(lista)
         totalPecaRef.current.textContent = SomarQntPecas(lista)
         totalItemRefs[idx].textContent = CalcularItem(idx, lista)
 
+        
+
     }
 
+
+    function ExcluirItem(idx){
+        let car = carrinho
+        setConfirmShow(true)
+    }
+
+    function ConfirmarExclusao(){
+        
+
+        setCarrinho(carrinho.filter(item => item.id = produtoSelecionado.id))
+        setConfirmShow(false)
+        console.log(carrinho)
+        console.log(produtoSelecionado.id_produto)
+
+    }
+
+
     function CalcularItem(idx, lista){
-        return Moeda(lista[idx].qnt*lista[idx].valor)
+        return Moeda(lista[idx].quantidade*lista[idx].valor_unitario)
     }
 
     function SomarItens(lista){
         let list = lista
-        let quantidade = 0.0
+        let quant = 0.0
         let preco = 0.0
         let total = 0
 
         list.forEach(item => {
-            quantidade = item.qnt
-            preco = item.valor
-            total = total+(quantidade*preco)
+            quant = item.quantidade
+            preco = item.valor_unitario
+            total = total+(quant*preco)
         });
 
         return Moeda(total)
@@ -75,12 +102,12 @@ export default function Finalizar(){
 
     function SomarQntPecas(lista){
         let list = lista
-        let quantidade = 0.0
+        let quant = 0.0
         let total = 0
 
         list.forEach(item => {
-            quantidade = item.qnt
-            total = total+quantidade
+            quant = item.quantidade
+            total = total+quant
         });
 
         return total
@@ -127,9 +154,9 @@ export default function Finalizar(){
                                             <Image src={Pastel} my-auto="true" roundedCircle style={{height:50, width:50}} alt='imagem do produto' />
                                         </Col>
                                         <Col xs='6' my-auto="true" style={{textAlign:'start'}}>
-                                            <p><strong>{item.nomeProduto}</strong></p>
+                                            <p><strong ref={ref =>{nomeProdutoRefs[idx] = ref}}>{item.nome}</strong></p>
                                             <p style={{fontSize:13}}>{LimitarString(item.descricao, 30)}</p>
-                                            <p><strong>{Moeda(item.valor)}</strong></p>
+                                            <p><strong>{Moeda(item.valor_unitario)}</strong></p>
                                             {item.observacao !== '' 
                                                 ? <p style={{fontSize:13}}><strong>Observações: </strong></p>
                                                 : <p/>
@@ -142,13 +169,13 @@ export default function Finalizar(){
                                         <Col xs='4' my-auto="true">
                                             <Row>
                                                 <Col xs='5' style={{padding:0}}>
-                                                    <Button onClick={()=> UpdateArrayDecrement(idx, inputRefs[idx])} style={{width:'100%',borderStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3', background:'#FFF', color:'#707070', borderRadius:0, borderBottomLeftRadius:8, borderTopLeftRadius:8}}>
+                                                    <Button onClick={()=> UpdateArrayDecrement(idx, inputRefs[idx], item.id)} style={{width:'100%',borderStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3', background:'#FFF', color:'#707070', borderRadius:0, borderBottomLeftRadius:8, borderTopLeftRadius:8}}>
                                                         -
                                                     </Button>
                                                 </Col>
                                                 <Col xs='2' style={{padding:0}}>
                                                     <p ref={inputRef => {inputRefs[idx] = inputRef}}  style={{textAlign:'center', height:'100%', paddingTop:7, fontWeight:'bold', borderBottomStyle:'solid', borderTopStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3'}}>
-                                                        {item.qnt}
+                                                        {item.quantidade}
                                                     </p>
                                                 </Col>
                                                 <Col xs='5' style={{padding:0}}>
@@ -239,6 +266,21 @@ export default function Finalizar(){
                     <Button variant="danger" style={{width:200}} onClick={()=> history.push('/')}>
                         Enviar Pedido
                     </Button>
+                </Modal.Footer>
+            </Modal>
+
+            <Modal show={confirmShow} onHide={()=>setConfirmShow(false)}>
+                <Modal.Header closeButton>
+                <Modal.Title>{produtoSelecionado.nome}</Modal.Title>
+                </Modal.Header>
+                    <Modal.Body>Deseja realmente excluir o item {produtoSelecionado.nome}</Modal.Body>
+                <Modal.Footer>
+                <Button variant="secondary" onClick={()=>setConfirmShow(false)}>
+                    Não
+                </Button>
+                <Button variant="primary" onClick={()=> ConfirmarExclusao()}>
+                    Sim
+                </Button>
                 </Modal.Footer>
             </Modal>            
         </Container>

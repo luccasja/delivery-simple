@@ -4,78 +4,34 @@ import Pastel from '../../img/img_indisponivel.png'
 import Add from '../../img/add.png'
 import {useHistory, useLocation} from 'react-router-dom'
 import {Button, Container, Row, Col, Image, Modal, InputGroup, FormControl} from 'react-bootstrap'
+import api from '../../services/api'
 
 import './style.css'
 
 export default function Pedido (){
     const [showModal, setShowModal] = useState(false)
-    const [nomeProduto, setNomeProduto] = useState('Nome do Produto')
+    const [id, setId] = useState(0)
+    const [nome, setNome] = useState('Nome do Produto')
     const [descricao, setDescricao] = useState('Descrição')
-    const [valor, setValor] = useState(3)
+    const [valor_unitario, setValorUnitario] = useState(3)
     const [valorTotal, setValorTotal] = useState(0)
-    const [qnt, setQnt] = useState(1)
+    const [quantidade, setQuantidade] = useState(1)
     const [qntItens, setQntItens] = useState(0)
     const [observacao, setObservacao] = useState('')
     const [carrinho, setCarrinho] = useState([])
     const [btnCarrinhoVisible, setBtnCarrinhoVisible] = useState(false)
     const [btnAddValue, setBtnAddValue] = useState(0)
+    const [produtos, setProdutos] = useState([])
+
     const location = useLocation()
     const history = useHistory()
+    let ullistaRef = useRef()
 
     useEffect(()=>{
-        if(location.state != null){
-            let car = carrinho
-            setValorTotal(SomarItens(car))
-            setBtnCarrinhoVisible(true)
-            setCarrinho(location.state)
-        }
-    },[carrinho])
-
-    const [itens, setItens] = useState([
-        {
-            posicao:1,
-            nome:'Pastel de Carne',
-            descricao:'Carne, Cebola e Cheiro Verde',
-            valor_unitario:3.5
-        },
-        {
-            posicao:2,
-            nome:'Pastel de Frango',
-            descricao:'Frango, Cebola e Cheiro Verde',
-            valor_unitario:4
-        },
-        {
-            posicao:3,
-            nome:'Kibi',
-            descricao:'Carne moida, sal e açucar a gosto',
-            valor_unitario:2.7
-        },
-        {
-            posicao:4,
-            nome:'Pão de Queijo',
-            descricao:'Queijo e oregano',
-            valor_unitario:0.5
-        },
-        {
-            posicao:5,
-            nome:'Pastel de Forma',
-            descricao:'Frango e demais ingredientes',
-            valor_unitario:2.7
-        },
-        {
-            posicao:6,
-            nome:'Pastel de Forma',
-            descricao:'Frango e demais ingredientes',
-            valor_unitario:2.7
-        },
-        {
-            posicao:7,
-            nome:'Pastel de Forma',
-            descricao:'Frango e demais ingredientes',
-            valor_unitario:2.7
-        }
-    ])
-
+        api.get('/produto').then(response =>{
+            setProdutos(response.data)
+        })
+    },[])
 
     function handleCloseModal(){
         setShowModal(false)
@@ -83,31 +39,31 @@ export default function Pedido (){
 
 
     function handleIncremet(){
-        if(qnt === 20){
+        if(quantidade === 20){
             alert('Quantidade maxima para o item: 20')
             return
         }
 
-        let quantidade = qnt
-        quantidade++
+        let quant = quantidade
+        quant++
 
-        let valorUnitario = valor
-        let novoValor = (quantidade*valorUnitario)
+        let valorUni = valor_unitario
+        let novoValor = (quant*valorUni)
 
-        setQnt(quantidade)
+        setQuantidade(quant)
         setBtnAddValue(novoValor)
     }
 
     function handleDecremet(){
-        let quantidade = qnt
-        if(qnt===1){
+        let quant = quantidade
+        if(quant===1){
             return
         }
-        quantidade--
-        let valorUnitario = valor
-        let novoValor = (quantidade*valorUnitario)
+        quant--
+        let valorUni = valor_unitario
+        let novoValor = (quant*valorUni)
 
-        setQnt(quantidade)
+        setQuantidade(quant)
         setBtnAddValue(novoValor)
     }
 
@@ -120,11 +76,12 @@ export default function Pedido (){
             alert('Foi atingido o limite de itens por pedido, pode prosseguir para seu carrinho.')
             return
         }
-        setNomeProduto(item.nome)
+        setId(item.id)
+        setNome(item.nome)
         setDescricao(item.descricao)
-        setValor(item.valor_unitario)
+        setValorUnitario(item.valor_unitario)
         setBtnAddValue(item.valor_unitario)
-        setQnt(1)
+        setQuantidade(1)
         setObservacao('')
         setShowModal(true)
     }
@@ -132,10 +89,11 @@ export default function Pedido (){
     function handleAdicionar(){
         let car = carrinho
         car.push({
-            nomeProduto,
+            id,
+            nome,
             descricao,
-            valor,
-            qnt,
+            valor_unitario,
+            quantidade,
             observacao
         })
         setQntItens(qntItens+1)
@@ -148,14 +106,14 @@ export default function Pedido (){
 
     function SomarItens(lista){
         let list = lista
-        let quantidade = 0.0
+        let quant = 0.0
         let preco = 0.0
         let total = 0
 
         list.forEach(item => {
-            quantidade = item.qnt
-            preco = item.valor
-            total = total+(quantidade*preco)
+            quant = item.quantidade
+            preco = item.valor_unitario
+            total = total+(quant*preco)
         });
 
         return Moeda(total)
@@ -188,9 +146,9 @@ export default function Pedido (){
                     </Row>
                     <Row>
                         <Col style={{padding:0, margin:0,  overflow:'auto'}}>
-                            <ul style={{padding:0, margin:0, width:'100%', height:400}}>
+                            <ul ref={ullistaRef} style={{padding:0, margin:0, width:'100%', height:400}}>
                                 {
-                                    itens.map((item, idx)=>{
+                                    produtos.map((item, idx)=>{
                                         return(
                                             <li key={idx} style={{listStyle:'none', padding:0, margin:0}}>
                                                 <Row onClick={()=> ShowModal(item)} style={{justifyContent:'center', alignItems:'center',padding:0, margin:0, cursor:'pointer', borderBottomStyle:'solid', borderBottomColor:'#e3e3e3', borderBottomWidth:0.5, paddingTop:5, paddingBottom:5}}>
@@ -242,13 +200,13 @@ export default function Pedido (){
                         <Image src={Pastel} roundedCircle style={{height:100, width:100, borderStyle:'solid', borderColor:'#e3e3e3', borderWidth:1}} alt='Pastel de Carne' />
                     </Row>
                     <Row style={{justifyContent:'center', alignItems:'center'}}>
-                        <p><strong>{nomeProduto}</strong></p>
+                        <p><strong>{nome}</strong></p>
                     </Row>
                     <Row style={{justifyContent:'center', alignItems:'center'}}>
                         <p>{descricao}</p>
                     </Row>
                     <Row style={{justifyContent:'center', alignItems:'center', marginTop:15, marginBottom:15}}>
-                        <p><strong>{Moeda(valor)}</strong></p>
+                        <p><strong>{Moeda(valor_unitario)}</strong></p>
                     </Row>
                     <Row style={{justifyContent:'center', alignItems:'center'}}>
                         <p><strong>Deseja acrescentar observações?</strong></p>
@@ -265,7 +223,7 @@ export default function Pedido (){
                             </Col>
                             <Col xs='2' style={{padding:0}}>
                                 <p style={{textAlign:'center', height:'100%', paddingTop:7, fontWeight:'bold', borderBottomStyle:'solid', borderTopStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3'}}>
-                                    {qnt}
+                                    {quantidade}
                                 </p>
                             </Col>
                             <Col xs='2' style={{padding:0}}>

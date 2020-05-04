@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Pedido from './pages/Pedido'
 import Finalizar from './pages/Finalizar'
+import Dashboard from './pages/Dashboard'
 
 export default function Routes() {
     return(
@@ -13,6 +14,7 @@ export default function Routes() {
                 <Route path='/login' component={Login} />
                 <Route path='/pedido' component={Pedido} />
                 <Route path='/finalizar' component={Finalizar} />
+                <Route path='/dashboard' component={Dashboard} />
             </Switch>
         </BrowserRouter>
     )
