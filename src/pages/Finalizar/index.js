@@ -2,13 +2,31 @@ import React, {useRef, useState, useEffect} from 'react';
 import Logo from '../../img/Logo.jpeg'
 import Pastel from '../../img/img_indisponivel.png'
 import {useHistory, useLocation} from 'react-router-dom'
-import { Container, Row, Col, Image, Button, Modal } from 'react-bootstrap';
+import { Container, Row, Col, Image, Button, Modal, Spinner} from 'react-bootstrap';
+import Api from '../../services/api'
 
 export default function Finalizar(){
     const [showModal, setShowModal] = useState(false)
     const [carrinho, setCarrinho] = useState([])
     const [confirmShow, setConfirmShow] = useState(false)
     const [produtoSelecionado, setProdutoSelecionado] = useState('')
+    const [loadding, setLoadding] = useState(true)
+    const [btnEnviarPedidoDisabled, setBtnEnviarPedidoDisabled] = useState(false)
+    const [nome_cliente, setNomeCliente] = useState('')
+    const [telefone, setTelefone]= useState('')
+    const [endereco_entrega, setEnderecoEntrega] = useState('')
+    const [numero_entrega, setNumeroEntrega] = useState('')
+    const [bairro_entrega, setBairroEntrega] = useState('')
+    const [complemento_entrega, setComplementoEntrega] = useState('')
+    const [frm_pagamento, setFromPagamento] = useState('')
+    const [qntd_item, setQtndItem] = useState(0)
+    const [entregue, setEntregue] = useState(0)
+    const [troco,setTroco] = useState(0)
+    const [valor_total, setValorTotal] = useState(0)
+    const [numero_pedido, setNumeroPedido] = useState(0)
+    const [disabledForm, setDisabledForm] = useState(false)
+    const [concluido, setConcluido] = useState(false)
+    const [btnEnviarTxt, setBtnEnviarTxt] = useState('Enviar Pedido')
     const totalRef = useRef()
     const totalPecaRef = useRef()
     const history = useHistory()
@@ -17,24 +35,23 @@ export default function Finalizar(){
     let totalItemRefs = []
     let nomeProdutoRefs = []
     
+    
     useEffect(()=>{
-        if(location.state != null){
+        if(location.state !== null && loadding){
             setCarrinho(location.state)
         }
+        setLoadding(false)
     })
-
-    
     
     function handleCloseModal(){
         setShowModal(false)
     }
 
-
     function UpdateArrayIncrement(idx, ref){
         let lista = carrinho
-        
-        lista[idx].qnt = lista[idx].qnt+1;
-        ref.textContent = lista[idx].qnt
+        lista[idx].quantidade = lista[idx].quantidade+1;
+        lista[idx].valor_total = lista[idx].quantidade*lista[idx].valor_unitario
+        ref.textContent = lista[idx].quantidade
         setCarrinho(lista)
         totalRef.current.textContent = SomarItens(lista)
         totalPecaRef.current.textContent = SomarQntPecas(lista)
@@ -47,37 +64,23 @@ export default function Finalizar(){
         if(lista[idx].quantidade === 1){
             let nome = nomeProdutoRefs[idx].textContent
             setProdutoSelecionado({id_produto, nome}) 
-            ExcluirItem(id_produto)
-
-            
+            setConfirmShow(true)
             return
         }
 
         lista[idx].quantidade = lista[idx].quantidade-1;
+        lista[idx].valor_total = lista[idx].quantidade*lista[idx].valor_unitario
         ref.textContent = lista[idx].quantidade
         setCarrinho(lista)
         totalRef.current.textContent = SomarItens(lista)
         totalPecaRef.current.textContent = SomarQntPecas(lista)
         totalItemRefs[idx].textContent = CalcularItem(idx, lista)
-
-        
-
-    }
-
-
-    function ExcluirItem(idx){
-        let car = carrinho
-        setConfirmShow(true)
     }
 
     function ConfirmarExclusao(){
-        
-
-        setCarrinho(carrinho.filter(item => item.id = produtoSelecionado.id))
+        let idx = produtoSelecionado.id_produto
+        setCarrinho(carrinho.filter(item=> item.id_produto !== idx))
         setConfirmShow(false)
-        console.log(carrinho)
-        console.log(produtoSelecionado.id_produto)
-
     }
 
 
@@ -100,6 +103,22 @@ export default function Finalizar(){
         return Moeda(total)
     }
 
+    function SomarItensDouble(lista){
+        let list = lista
+        let quant = 0.0
+        let preco = 0.0
+        let total = 0
+
+        list.forEach(item => {
+            quant = item.quantidade
+            preco = item.valor_unitario
+            total = total+(quant*preco)
+        });
+
+        return total
+    }
+
+
     function SomarQntPecas(lista){
         let list = lista
         let quant = 0.0
@@ -120,11 +139,63 @@ export default function Finalizar(){
         return value
     }
 
-    
-
     function Moeda(value){
         return Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(value)
     }
+
+    function Finalizar(){
+        setShowModal(true)
+        setQtndItem(carrinho.length)
+        setValorTotal(SomarItensDouble(carrinho))
+        setQtndItem(carrinho.length)
+        setEntregue(false)
+    }
+
+    function EnviarPedido(){
+
+        if(btnEnviarTxt !== 'Enviar Pedido'){
+            setShowModal(false)
+            history.replace('/')
+            return
+        }
+
+        setDisabledForm(true)
+        setLoadding(true)
+        setBtnEnviarTxt('Enviando Pedido...')
+
+        const pedido = {
+            nome_cliente,
+            telefone,
+            endereco_entrega,
+            numero_entrega,
+            bairro_entrega,
+            complemento_entrega,
+            frm_pagamento,
+            troco,
+            valor_total,
+            qntd_item,
+            entregue,
+        }
+
+
+        Api.post('pedido', pedido).then(response =>{
+            if(response.status === 200){
+                if(response.data.id > 0){
+                    setNumeroPedido(response.data.id)
+                    Api.post(`pedido/${response.data.id}/item`, carrinho).then(res=>{
+                        setConcluido(true)
+                        setLoadding(false)
+                        setBtnEnviarTxt("Ok")
+                    })
+                }
+            }
+        })
+
+
+        
+    }
+    
+
 
     return(
         <Container>
@@ -157,11 +228,11 @@ export default function Finalizar(){
                                             <p><strong ref={ref =>{nomeProdutoRefs[idx] = ref}}>{item.nome}</strong></p>
                                             <p style={{fontSize:13}}>{LimitarString(item.descricao, 30)}</p>
                                             <p><strong>{Moeda(item.valor_unitario)}</strong></p>
-                                            {item.observacao !== '' 
+                                            {item.observacoes !== '' 
                                                 ? <p style={{fontSize:13}}><strong>Observações: </strong></p>
                                                 : <p/>
                                             }
-                                            {item.observacao !== '' 
+                                            {item.observacoes !== '' 
                                                 ? <p style={{fontSize:13}}><span>{LimitarString(item.observacao, 30)}</span></p>
                                                 : <p/>
                                             }
@@ -169,7 +240,7 @@ export default function Finalizar(){
                                         <Col xs='4' my-auto="true">
                                             <Row>
                                                 <Col xs='5' style={{padding:0}}>
-                                                    <Button onClick={()=> UpdateArrayDecrement(idx, inputRefs[idx], item.id)} style={{width:'100%',borderStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3', background:'#FFF', color:'#707070', borderRadius:0, borderBottomLeftRadius:8, borderTopLeftRadius:8}}>
+                                                    <Button onClick={()=> UpdateArrayDecrement(idx, inputRefs[idx], item.id_produto)} style={{width:'100%',borderStyle:'solid', borderWidth:0.5, borderColor:'#e3e3e3', background:'#FFF', color:'#707070', borderRadius:0, borderBottomLeftRadius:8, borderTopLeftRadius:8}}>
                                                         -
                                                     </Button>
                                                 </Col>
@@ -186,7 +257,7 @@ export default function Finalizar(){
                                             </Row>
                                             <Row style={{marginTop:10}}>
                                                 <Col>
-                                                    <p> T: <strong ref={totalItemRef => {totalItemRefs[idx] = totalItemRef}}>{Moeda(item.qnt*item.valor)}</strong></p>
+                                                    <p> T: <strong ref={totalItemRef => {totalItemRefs[idx] = totalItemRef}}>{Moeda(item.quantidade*item.valor_unitario)}</strong></p>
                                                 </Col>
                                             </Row>
                                         </Col>
@@ -213,7 +284,7 @@ export default function Finalizar(){
                         </Col>
                     </Row>
                     <Row  style={{justifyContent:'center', alignItems:'center'}}>
-                        <Button variant="danger" style={{width:250, height:50}} onClick={()=> setShowModal(true)}>
+                        <Button variant="danger" style={{width:250, height:50}} onClick={Finalizar}>
                             Finalizar
                         </Button>
                     </Row>
@@ -224,48 +295,69 @@ export default function Finalizar(){
                 <Modal.Header closeButton>
                     <p style={{justifyContent:'center', alignItems:'center', width:'100%'}}><strong>Finalização do Pedido</strong></p>
                 </Modal.Header>
-                <Modal.Body>
+                <Modal.Body style={{padding:30}} hidden={disabledForm}>
                     <Row>
                         <Col>
                             <p><strong>Nome</strong></p>
-                            <input style={{width:'100%'}}/>
+                            <input required disabled={disabledForm} onChange={e => setNomeCliente(e.target.value)} style={{width:'100%'}}/>
                         </Col>
                     </Row>
-                    <Row>
+                    <Row style={{marginBottom:30}}>
                         <Col>
                             <p><strong>Telefone</strong></p>
-                            <input placeholder='75 99999-9999' type='number' style={{width:'100%'}}/>
+                            <input required disabled={disabledForm} onChange={e => setTelefone(e.target.value)} placeholder='75 99999-9999' type='number' style={{width:'100%'}}/>
                         </Col>
                     </Row>
-                    <Row>
+                    <Row style={{marginBottom:20}}>
                         <Col>
                             <p><strong>Endereço</strong></p>
-                            <input placeholder='Rua' style={{width:'100%'}}/>
-                            <input placeholder='Número' style={{width:'100%'}}/>
-                            <input placeholder='Bairro' style={{width:'100%'}}/>
-                            <input placeholder='Complemento' style={{width:'100%'}}/>
+                            <input required disabled={disabledForm} onChange={e => setEnderecoEntrega(e.target.value)} placeholder='Rua' style={{width:'100%'}}/>
+                            <input required disabled={disabledForm} onChange={e => setNumeroEntrega(e.target.value)} placeholder='Número' style={{width:'100%'}}/>
+                            <input required disabled={disabledForm} onChange={e => setBairroEntrega(e.target.value)} placeholder='Bairro' style={{width:'100%'}}/>
+                            <input required disabled={disabledForm} onChange={e => setComplementoEntrega(e.target.value)} placeholder='Complemento' style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row>
                         <Col>
                             <p><strong>Forma de Pagamento</strong></p>
-                            <select style={{width:'100%'}}>
+                            <select disabled={disabledForm} onChange={e => setFromPagamento(e.target.value)} style={{width:'100%'}}>
                                 <option>Dinheiro</option>
                                 <option>Cartão</option>
                             </select>
                         </Col>
                     </Row>
-                    <Row>
+                    <Row  style={{marginBottom:30}}>
                         <Col>
                             <p><strong>Troco Para?</strong></p>
-                            <input placeholder='0,00' type='number' style={{width:'100%'}}/>
+                            <input disabled={disabledForm} onChange={e => setTroco(e.target.value)} placeholder='0,00' type='number' style={{width:'100%'}}/>
                         </Col>
                     </Row>
+                    
                 </Modal.Body>
-                <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
-                    <Button variant="danger" style={{width:200}} onClick={()=> history.push('/')}>
-                        Enviar Pedido
-                    </Button>
+                <Modal.Footer style={{justifyContent:'center', alignItems:'center', flexDirection:'column'}}>
+                    <Row>
+                        <Col my-auto="true" style={{textAlign:'center'}}>
+                            <p><strong>Totais</strong></p>
+                            <p>Itens incluso: <strong>{carrinho.length}</strong></p>
+                            <p>Quantidade de Peças: <strong>{SomarQntPecas(carrinho)}</strong></p>
+                            <p>Total: <strong>{SomarItens(carrinho)}</strong></p>
+                        </Col>
+                    </Row>
+                    <Row hidden={!concluido}>
+                        <Container style={{padding:10, textAlign:'center', borderRadius:8}}>
+                            <p style={{color:'#86E3CE'}}><strong>{nome_cliente},</strong></p>
+                            <p style={{color:'#86E3CE'}}>Muito obrigado pela sua preferencia! ;)</p>
+                            <p style={{color:'#86E3CE'}}>Pedido: <strong>{numero_pedido}</strong></p>
+                        </Container>
+                    </Row>
+                    <Row>
+                        <Col>
+                            <Button variant="danger" style={{width:200}} onClick={EnviarPedido} disabled={btnEnviarPedidoDisabled}>
+                                <Spinner animation="border" hidden={!loadding} variant="light" style={{height:20, width:20, marginRight:10}}/> 
+                                <span>{btnEnviarTxt}</span>
+                            </Button>
+                        </Col>
+                    </Row>
                 </Modal.Footer>
             </Modal>
 
@@ -275,7 +367,7 @@ export default function Finalizar(){
                 </Modal.Header>
                     <Modal.Body>Deseja realmente excluir o item {produtoSelecionado.nome}</Modal.Body>
                 <Modal.Footer>
-                <Button variant="secondary" onClick={()=>setConfirmShow(false)}>
+                <Button variant="secondary" onClick={()=> setConfirmShow(false)}>
                     Não
                 </Button>
                 <Button variant="primary" onClick={()=> ConfirmarExclusao()}>

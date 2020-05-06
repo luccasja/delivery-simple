@@ -10,16 +10,16 @@ import './style.css'
 
 export default function Pedido (){
     const [showModal, setShowModal] = useState(false)
-    const [id, setId] = useState(0)
+    const [id_produto, setIdProduto] = useState(0)
     const [nome, setNome] = useState('Nome do Produto')
     const [descricao, setDescricao] = useState('Descrição')
     const [valor_unitario, setValorUnitario] = useState(3)
     const [valorTotal, setValorTotal] = useState(0)
     const [quantidade, setQuantidade] = useState(1)
     const [qntItens, setQntItens] = useState(0)
-    const [observacao, setObservacao] = useState('')
+    const [observacoes, setObservacoes] = useState('')
     const [carrinho, setCarrinho] = useState([])
-    const [btnCarrinhoVisible, setBtnCarrinhoVisible] = useState(false)
+    const [btnCarrinhoVisible, setBtnCarrinhoVisible] = useState(true)
     const [btnAddValue, setBtnAddValue] = useState(0)
     const [produtos, setProdutos] = useState([])
 
@@ -28,9 +28,23 @@ export default function Pedido (){
     let ullistaRef = useRef()
 
     useEffect(()=>{
+        
+        if(localStorage.getItem('@delivery/produtos') !== null){
+            setProdutos(JSON.parse(localStorage.getItem('@delivery/produtos')))
+        }
+        
         api.get('/produto').then(response =>{
             setProdutos(response.data)
+            localStorage.setItem('@delivery/produtos', JSON.stringify(response.data))
         })
+
+        if(location.state !== undefined){
+            setCarrinho(location.state)
+            setValorTotal(SomarItens(location.state))
+            if(location.state.length > 0){
+                setBtnCarrinhoVisible(true)
+            }
+        }
     },[])
 
     function handleCloseModal(){
@@ -76,25 +90,31 @@ export default function Pedido (){
             alert('Foi atingido o limite de itens por pedido, pode prosseguir para seu carrinho.')
             return
         }
-        setId(item.id)
+        setIdProduto(item.id)
         setNome(item.nome)
         setDescricao(item.descricao)
         setValorUnitario(item.valor_unitario)
         setBtnAddValue(item.valor_unitario)
         setQuantidade(1)
-        setObservacao('')
+        setObservacoes('')
         setShowModal(true)
     }
 
     function handleAdicionar(){
         let car = carrinho
+        
+        if(!carrinho){
+            car = []
+        }
+        
         car.push({
-            id,
+            id_produto,
             nome,
             descricao,
             valor_unitario,
             quantidade,
-            observacao
+            observacoes,
+            valor_total:quantidade*valor_unitario
         })
         setQntItens(qntItens+1)
         setCarrinho(car)
@@ -105,6 +125,11 @@ export default function Pedido (){
     }
 
     function SomarItens(lista){
+
+        if(!lista){
+            return 0
+        }
+
         let list = lista
         let quant = 0.0
         let preco = 0.0
@@ -124,6 +149,11 @@ export default function Pedido (){
             return value.substring(0, maxLength)+'...'
         }
         return value
+    }
+
+    function IrAoCarrinho(){
+        //localStorage.setItem('@delivery/carrinho', JSON.stringify(carrinho))
+        history.replace('/finalizar', carrinho)
     }
 
     return(
@@ -181,7 +211,7 @@ export default function Pedido (){
                         <Row>
                             <Col/>
                             <Col md='8'>
-                                <Button  variant="danger" style={{width:300}} onClick={()=> history.replace('/finalizar', carrinho)}>
+                                <Button  variant="danger" style={{width:300}} onClick={IrAoCarrinho}>
                                     Ir para o Carrinho <span>{valorTotal}</span>
                                 </Button>
                             </Col>
@@ -211,7 +241,7 @@ export default function Pedido (){
                     <Row style={{justifyContent:'center', alignItems:'center'}}>
                         <p><strong>Deseja acrescentar observações?</strong></p>
                         <InputGroup>
-                            <FormControl onChange={(e)=> setObservacao(e.target.value)} as="textarea" aria-label="With textarea" maxLength={120} height={70} style={{resize: 'none' , margin:20, marginTop:0, background:'#F5F5F5', borderColor:'#E3E3E3'}}/>
+                            <FormControl onChange={(e)=> setObservacoes(e.target.value)} as="textarea" aria-label="With textarea" maxLength={120} height={70} style={{resize: 'none' , margin:20, marginTop:0, background:'#F5F5F5', borderColor:'#E3E3E3'}}/>
                         </InputGroup>
                     </Row>
                     <Row style={{marginTop:5, marginBottom:5}}>
