@@ -27,8 +27,17 @@ export default function Finalizar(){
     const [disabledForm, setDisabledForm] = useState(false)
     const [concluido, setConcluido] = useState(false)
     const [btnEnviarTxt, setBtnEnviarTxt] = useState('Enviar Pedido')
+    const [inputBairroVisible, setInputBairroVisible] = useState(false)
     const totalRef = useRef()
     const totalPecaRef = useRef()
+    const nomeClienteRef = useRef()
+    const telefoneRef = useRef()
+    const ruaEntregaRef = useRef()
+    const numeroEntregaRef = useRef()
+    const bairroSelecaoRef = useRef()
+    const bairroRef = useRef()
+    const frmPagamentoRef = useRef()
+    const trocoRef = useRef()
     const history = useHistory()
     const location = useLocation()
     let inputRefs = []
@@ -151,12 +160,64 @@ export default function Finalizar(){
         setEntregue(false)
     }
 
+    function OptionsChargeBairro(value){
+        if(value !== 'Outros'){
+            setBairroEntrega(value)
+            setInputBairroVisible(false)
+            return
+        }
+        setInputBairroVisible(true)
+    }
+
     function EnviarPedido(){
+        console.log(nomeClienteRef)
+        if(nomeClienteRef.current.value === "" || nomeClienteRef.current.value.length < 3){
+            alert('Campo nome obrigatorio')
+            nomeClienteRef.current.focus()
+            return
+        }
+        if(telefoneRef.current.value === "" || telefoneRef.current.value.length < 9){
+            alert('Campo telefone obrigatorio')
+            telefoneRef.current.focus()
+            return
+        }
+        if(ruaEntregaRef.current.value === "" || ruaEntregaRef.current.value.length < 3){
+            alert('Campo rua obrigatorio')
+            ruaEntregaRef.current.focus()
+            return
+        }
+        if(numeroEntregaRef.current.value === ""){
+            alert('Campo numero obrigatorio')
+            numeroEntregaRef.current.focus()
+            return
+        }
+        if(bairroSelecaoRef.current.value === "Selecione seu bairro"){
+            alert('Selecione seu bairro')
+            bairroSelecaoRef.current.focus()
+            return
+        }
+        if(bairroSelecaoRef.current.value === "Outros"){
+            if(bairroRef.current.value === ''){
+                alert('Informe seu bairro')
+                bairroRef.current.focus()
+                return
+            }
+        }
+        if(frmPagamentoRef.current.textContent === ""){
+            alert('Selecione uma forma de pagamento')
+            frmPagamentoRef.current.focus()
+            return
+        }
 
         if(btnEnviarTxt !== 'Enviar Pedido'){
             setShowModal(false)
             history.replace('/')
             return
+        }
+
+        setFromPagamento(frmPagamentoRef.current.value)
+        if(bairroSelecaoRef.current.value === 'Outros'){
+            setBairroEntrega(bairroRef.current.value)
         }
 
         setDisabledForm(true)
@@ -190,12 +251,9 @@ export default function Finalizar(){
                 }
             }
         })
-
-
         
     }
     
-
 
     return(
         <Container>
@@ -299,28 +357,35 @@ export default function Finalizar(){
                     <Row>
                         <Col>
                             <p><strong>Nome</strong></p>
-                            <input required disabled={disabledForm} onChange={e => setNomeCliente(e.target.value)} style={{width:'100%'}}/>
+                            <input ref={nomeClienteRef} value={nome_cliente} disabled={disabledForm} onChange={e => setNomeCliente(e.target.value)} style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row style={{marginBottom:30}}>
                         <Col>
                             <p><strong>Telefone</strong></p>
-                            <input required disabled={disabledForm} onChange={e => setTelefone(e.target.value)} placeholder='75 99999-9999' type='number' style={{width:'100%'}}/>
+                            <input ref={telefoneRef}  value={telefone} disabled={disabledForm} onChange={e => setTelefone(e.target.value)} placeholder='75 99999-9999' type='number' style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row style={{marginBottom:20}}>
                         <Col>
                             <p><strong>Endereço</strong></p>
-                            <input required disabled={disabledForm} onChange={e => setEnderecoEntrega(e.target.value)} placeholder='Rua' style={{width:'100%'}}/>
-                            <input required disabled={disabledForm} onChange={e => setNumeroEntrega(e.target.value)} placeholder='Número' style={{width:'100%'}}/>
-                            <input required disabled={disabledForm} onChange={e => setBairroEntrega(e.target.value)} placeholder='Bairro' style={{width:'100%'}}/>
-                            <input required disabled={disabledForm} onChange={e => setComplementoEntrega(e.target.value)} placeholder='Complemento' style={{width:'100%'}}/>
+                            
+                            <input value={endereco_entrega} ref={ruaEntregaRef} disabled={disabledForm} onChange={e => setEnderecoEntrega(e.target.value)} placeholder='Rua' style={{width:'100%'}}/>
+                            <input value={numero_entrega} ref={numeroEntregaRef} disabled={disabledForm} onChange={e => setNumeroEntrega(e.target.value)} placeholder='Número' style={{width:'100%'}}/>
+                            <select ref={bairroSelecaoRef} style={{width:'100%'}} onChange={e => OptionsChargeBairro(e.target.value)}>
+                                <option>Selecione seu bairro</option>
+                                <option>Cidade Jardim</option>
+                                <option>Popular</option>
+                                <option>Outros</option>
+                            </select>
+                            <input value={bairro_entrega} ref={bairroRef} disabled={disabledForm} hidden={!inputBairroVisible} onChange={e => setBairroEntrega(e.target.value)} placeholder='Bairro' style={{width:'100%'}}/>
+                            <input disabled={disabledForm} onChange={e => setComplementoEntrega(e.target.value)} placeholder='Complemento' style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row>
                         <Col>
                             <p><strong>Forma de Pagamento</strong></p>
-                            <select disabled={disabledForm} onChange={e => setFromPagamento(e.target.value)} style={{width:'100%'}}>
+                            <select ref={frmPagamentoRef} disabled={disabledForm} onChange={e => setFromPagamento(e.target.value)} style={{width:'100%'}}>
                                 <option>Dinheiro</option>
                                 <option>Cartão</option>
                             </select>
@@ -329,7 +394,7 @@ export default function Finalizar(){
                     <Row  style={{marginBottom:30}}>
                         <Col>
                             <p><strong>Troco Para?</strong></p>
-                            <input disabled={disabledForm} onChange={e => setTroco(e.target.value)} placeholder='0,00' type='number' style={{width:'100%'}}/>
+                            <input ref={trocoRef} disabled={disabledForm} onChange={e => setTroco(e.target.value)} placeholder='0,00' type='number' style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     
