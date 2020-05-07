@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import avatar from '../../img/avatar.png'
 import {useHistory} from 'react-router-dom'
-import { Button, Container, Row, Col, Image} from 'react-bootstrap'
+import { Button, Container, Row, Col, Image, Alert} from 'react-bootstrap'
 import api from '../../services/api'
 
 
@@ -9,17 +9,31 @@ const Login = () => {
 
     const [user, setUser] = useState("")
     const [pass, setPass] = useState("")
-    const history = useHistory() 
+    const [erroVisible, setErroVisible] = useState(false)
+    const history = useHistory()
+    
+    useEffect(()=>{
+        let islogged = localStorage.getItem('@delivery/islogged')
+        if(islogged){
+            history.replace('/dashboard')
+        }
+    },[])
 
     async function Logar(){
         if(Validacao()){
             const auth = {user,pass}
-            await api.post('/usuario/auth', auth).then((resultado)=>{
-                if(resultado.data){
-                    localStorage.setItem('@delivery', resultado.data)
-                    history.replace('/dashboard')
-                }
-            })
+            try {
+                await api.post('/usuario/auth', auth).then((resultado)=>{
+                    console.log(resultado.data)
+                    if(resultado.data.autenticado){
+                        localStorage.setItem('@delivery/islogged', resultado.data.autenticado)
+                        history.replace('/dashboard')
+                    }
+                })
+            } catch (error) {
+                setErroVisible(true)
+            }
+           
         }
     }
 
@@ -60,6 +74,11 @@ const Login = () => {
                             <Button onClick={Logar} style={{background:'#FF414D', border:0, width:250, height:50, borderRadius:8 }}>Entrar</Button>
                         </Col>
                     </Row>
+                    <Container>
+                        <Alert hidden={!erroVisible} my-auto="true" variant='danger' style={{width:250, marginTop:15, fontSize:13, border:0}}>
+                            Usuário ou senha invalida!
+                        </Alert>
+                    </Container>
                 </Col>
                 <Col></Col>
             </Row>
