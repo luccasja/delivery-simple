@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import avatar from '../../img/avatar.png'
 import {useHistory} from 'react-router-dom'
 import { Button, Container, Row, Col, Image, Alert} from 'react-bootstrap'

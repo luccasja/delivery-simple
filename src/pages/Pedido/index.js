@@ -1,4 +1,4 @@
-import React, {useState, useRef, createRef, useEffect} from 'react'
+import React, {useState, useEffect} from 'react'
 import Logo from '../../img/Logo.jpeg'
 import Pastel from '../../img/img_indisponivel.png'
 import Add from '../../img/add.png'
@@ -25,7 +25,6 @@ export default function Pedido (){
 
     const location = useLocation()
     const history = useHistory()
-    let ullistaRef = useRef()
 
     useEffect(()=>{
         
@@ -152,7 +151,6 @@ export default function Pedido (){
     }
 
     function IrAoCarrinho(){
-        //localStorage.setItem('@delivery/carrinho', JSON.stringify(carrinho))
         history.replace('/finalizar', carrinho)
     }
 
@@ -176,7 +174,7 @@ export default function Pedido (){
                     </Row>
                     <Row>
                         <Col style={{padding:0, margin:0,  overflow:'auto'}}>
-                            <ul ref={ullistaRef} style={{padding:0, margin:0, width:'100%', height:400}}>
+                            <ul style={{padding:0, margin:0, width:'100%', height:400}}>
                                 {
                                     produtos.map((item, idx)=>{
                                         return(

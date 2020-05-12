@@ -18,7 +18,7 @@ export default function Finalizar(){
     const [numero_entrega, setNumeroEntrega] = useState('')
     const [bairro_entrega, setBairroEntrega] = useState('')
     const [complemento_entrega, setComplementoEntrega] = useState('')
-    const [frm_pagamento, setFromPagamento] = useState('')
+    const [frm_pagamento, setFromPagamento] = useState('Dinheiro')
     const [qntd_item, setQtndItem] = useState(0)
     const [entregue, setEntregue] = useState(0)
     const [troco,setTroco] = useState(0)
@@ -50,6 +50,7 @@ export default function Finalizar(){
             setCarrinho(location.state)
         }
         setLoadding(false)
+        
     })
     
     function handleCloseModal(){
@@ -158,6 +159,7 @@ export default function Finalizar(){
         setValorTotal(SomarItensDouble(carrinho))
         setQtndItem(carrinho.length)
         setEntregue(false)
+        console.log(bairroRef)
     }
 
     function OptionsChargeBairro(value){
@@ -166,6 +168,7 @@ export default function Finalizar(){
             setInputBairroVisible(false)
             return
         }
+        setBairroEntrega('')
         setInputBairroVisible(true)
     }
 
