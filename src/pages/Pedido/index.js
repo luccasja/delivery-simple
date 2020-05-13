@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react'
 import Logo from '../../img/Logo.jpeg'
-import Pastel from '../../img/img_indisponivel.png'
+import img_indisponivel from '../../img/img_indisponivel.png'
 import Add from '../../img/add.png'
 import {useHistory, useLocation} from 'react-router-dom'
 import {Button, Container, Row, Col, Image, Modal, InputGroup, FormControl} from 'react-bootstrap'
@@ -181,7 +181,7 @@ export default function Pedido (){
                                             <li key={idx} style={{listStyle:'none', padding:0, margin:0}}>
                                                 <Row onClick={()=> ShowModal(item)} style={{justifyContent:'center', alignItems:'center',padding:0, margin:0, cursor:'pointer', borderBottomStyle:'solid', borderBottomColor:'#e3e3e3', borderBottomWidth:0.5, paddingTop:5, paddingBottom:5}}>
                                                     <Col xs='2' my-auto="true">
-                                                        <Image src={Pastel} roundedCircle style={{height:40, width:40, borderStyle:'solid', borderColor:'#e3e3e3', borderWidth:1}} alt='imagem do produto' />
+                                                        <Image src={img_indisponivel} roundedCircle style={{height:40, width:40, borderStyle:'solid', borderColor:'#e3e3e3', borderWidth:1}} alt='imagem do produto' />
                                                     </Col>
                                                     <Col xs='6' my-auto="true" style={{textAlign:'start', padding:0, margin:0}}>
                                                         <p><strong>{item.nome}</strong></p>
@@ -225,7 +225,7 @@ export default function Pedido (){
                 <Modal.Header closeButton/>
                 <Modal.Body>
                     <Row style={{justifyContent:'center', alignItems:'center', marginBottom:20}}>
-                        <Image src={Pastel} roundedCircle style={{height:100, width:100, borderStyle:'solid', borderColor:'#e3e3e3', borderWidth:1}} alt='Pastel de Carne' />
+                        <Image src={img_indisponivel} roundedCircle style={{height:100, width:100, borderStyle:'solid', borderColor:'#e3e3e3', borderWidth:1}} alt='Pastel de Carne' />
                     </Row>
                     <Row style={{justifyContent:'center', alignItems:'center'}}>
                         <p><strong>{nome}</strong></p>

@@ -1,11 +1,13 @@
 import React, {useEffect, useState, useRef} from 'react'
 import {useHistory} from 'react-router-dom'
 import Logo from '../../img/Logo.jpeg'
-import { Container, Row, Col, Image, Button, Modal, Navbar} from 'react-bootstrap';
+import img_indisponivel from '../../img/img_indisponivel.png'
+import { Container, Row, Col, Image, Button, Modal, Navbar, InputGroup, FormControl} from 'react-bootstrap';
 import Api from '../../services/api'
 
 const Dashboard = () =>{
     const [pedidos, setPedidos] = useState([])
+    const [produtos, setProdutos] = useState([])
     const [showModal, setShowModal] = useState(false)
     const [id, setId] = useState(0)
     const [createdAt, setCreatedAt] = useState('')
@@ -22,9 +24,14 @@ const Dashboard = () =>{
     const [frm_pagamento, setFrmPagamento] = useState('')
     const [itensPedido, setItensPedido] = useState([])
     const [tituloJanela, setTituloJanela] = useState('Pedidos')
-    const [jenelaPedidoVisible, setJenelaPedidoVisible] = useState(true)
+    const [jenelaPedidoVisible, setJenelaPedidoVisible] = useState(false)
     const [jenelaPerfilVisible, setJenelaPerfilVisible] = useState(false)
-    const [jenelaProdutoVisible, setJenelaProdutoVisible] = useState(false)
+    const [jenelaProdutoVisible, setJenelaProdutoVisible] = useState(true)
+    const [prd_titulo, setPrdTitulo] = useState('')
+    const [prd_descicao, setPrdDescricao] = useState('')
+    const [prd_img_dir, setPrdImgDir] = useState('')
+    const [prd_valor_unitario, setPrdValorUnitario] = useState(0)
+    
 
     const history = useHistory()
     const btnPerfilRef = useRef()
@@ -48,6 +55,11 @@ const Dashboard = () =>{
         Api.get('pedido/data/'+GetFormattedDateIni()+'/'+GetFormattedDateFim()).then(response =>{
             setPedidos(response.data)
             localStorage.setItem('@delivery/pedidos', JSON.stringify(response.data))
+        })
+
+        Api.get('produto').then(response =>{
+            setProdutos(response.data)
+            localStorage.setItem('@delivery/produtos', JSON.stringify(response.data))
         })
     },[])
 
@@ -260,13 +272,35 @@ const Dashboard = () =>{
         txt.current.style.color = '#707070'
         btn.current.blur()
     }
+
+    function LimitarString(value = '', maxLength = 0){
+        if(value.length > maxLength){
+            return value.substring(0, maxLength)+'...'
+        }
+        return value
+    }
+
+    function CadastrarProduto(){
+        const produto = {
+            nome: prd_titulo,
+            descricao: prd_descicao,
+            dir_img: prd_img_dir,
+            valor_unitario: prd_valor_unitario
+        }
+
+        Api.post('produto', produto).then(response =>{
+            if(response.status === 200){
+                alert('Cadastro realizado com sucesso: '+response.data.Ok)
+            }
+        })
+    }
     
     return(
         <div style={{margin:0, padding:0}}>
             <Navbar style={{background:'#F43d'}}>
             <Navbar.Brand style={{color:'#FFF', textAlign:'center'}}>Fina Massa</Navbar.Brand>
             </Navbar>
-            <Row style={{width:'100%'}}>
+            <Row style={{width:'100%', margin:0}}>
                 <Col md='3' style={{background:'#FFF', textAlign:'center', maxWidth:250}}>
                     <Row style={{marginTop:20, paddingBottom:20, borderBottomStyle:'solid', borderBottomWidth:0.5, borderBottomColor:'#e3e3e3'}}>
                         <Col>
@@ -290,61 +324,95 @@ const Dashboard = () =>{
                         </Button>
                     </Row>
                 </Col>
-                <Col md='1'/>
-                <Col md='7' style={{background:'#FFF', marginTop:20, borderRadius:8, marginLeft:10, marginRight:10}}>
-                    <Container style={{textAlign:'center'}}>
-                        <p style={{fontSize:20, padding:10}}><strong >{tituloJanela}</strong></p>
-                    </Container>
-                    <Container hidden={!jenelaPedidoVisible} style={{padding:0, marginTop:0}}>
-                        <Row>
-                            <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0, marginBottom:10}}/>
-                        </Row>
-                        <Row>
-                            <Col md='6' my-auto='true'>
-                                <p><strong>Pedido</strong><input style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarPedido(e.target.valueAsNumber)} type="number" placeholder='99999'/></p>
-                            </Col>
-                            <Col md='6' my-auto='true'>
-                                <p><strong>Data</strong><input style={{fontWeight:'bold', marginLeft:10, width:170}} onChange={e => BuscarPedidoPorData(e.target.value)} maxLength="10" placeholder='01/01/2020'/></p>
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0, marginBottom:10}}/>
-                        </Row>
-                        {
-                            pedidos.map((item, idx) =>(
-                                <div key={item.id}>
-                                    <Row style={{padding:0}}>
-                                        <Col onClick={()=>ModalShow(item)} md='8' style={{padding:10, paddingLeft:20, cursor:'pointer'}}>
-                                            <p><strong style={{color:'#F97A7A'}}>Pedido: {item.id}</strong> - <strong>{DataFormat(item.createdAt)}</strong></p>
-                                            <p>{item.nome_cliente} - {item.telefone}</p>
-                                            <p>{item.endereco_entrega}, {item.numero_entrega}, {item.bairro_entrega}, {item.complemento_entrega}</p>
-                                            <p>Quantidade de Itens: <strong>{item.qntd_item}</strong></p>
+                <Col md='9' style={{padding:15, paddingBottom:0, width:'100%', minHeight:700}}>
+                    <Col style={{background:'#FFF', borderRadius:8, height:'100%'}}>
+                        <Container style={{textAlign:'center'}}>
+                            <p style={{fontSize:20, padding:10}}><strong >{tituloJanela}</strong></p>
+                        </Container>
+                        <Container hidden={!jenelaPedidoVisible} style={{padding:0, marginTop:0}}>
+                            <Row>
+                                <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0, marginBottom:10}}/>
+                            </Row>
+                            <Row>
+                                <Col md='6' my-auto='true'>
+                                    <p><strong>Pedido</strong><input style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarPedido(e.target.valueAsNumber)} type="number" placeholder='99999'/></p>
+                                </Col>
+                                <Col md='6' my-auto='true'>
+                                    <p><strong>Data</strong><input style={{fontWeight:'bold', marginLeft:10, width:170}} onChange={e => BuscarPedidoPorData(e.target.value)} maxLength="10" placeholder='01/01/2020'/></p>
+                                </Col>
+                            </Row>
+                            <Row>
+                                <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0, marginBottom:10}}/>
+                            </Row>
+                            {
+                                pedidos.map((item, idx) =>(
+                                    <div key={item.id}>
+                                        <Row style={{padding:0}}>
+                                            <Col onClick={()=>ModalShow(item)} md='8' style={{padding:10, paddingLeft:20, cursor:'pointer'}}>
+                                                <p><strong style={{color:'#F97A7A'}}>Pedido: {item.id}</strong> - <strong>{DataFormat(item.createdAt)}</strong></p>
+                                                <p>{item.nome_cliente} - {item.telefone}</p>
+                                                <p>{item.endereco_entrega}, {item.numero_entrega}, {item.bairro_entrega}, {item.complemento_entrega}</p>
+                                                <p>Quantidade de Itens: <strong>{item.qntd_item}</strong></p>
+                                            </Col>
+                                            <Col md='4' my-auto="true" style={{textAlign:'center', padding:0, margin:0}}>
+                                                <p style={{fontSize:20, width:'100%', marginBottom:5}}><strong>{Moeda(item.valor_total)}</strong></p>
+                                                {
+                                                    item.entregue === 1 
+                                                    ? <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> FinalizarPedido(item.id, idx)} style={{background:'#47CE43', color:'#FFF', fontWeight:'bold', borderColor:'#47CE43', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }} >Reabrir</Button>
+                                                    : <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> FinalizarPedido(item.id, idx)} style={{background:'#FFF', color:'#F43d', fontWeight:'bold', borderColor:'#F43d', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }}>Finalizar</Button> 
+                                                } 
+                                            </Col>
+                                        </Row>
+                                        <Row>
+                                            <Col style={{width:'100%', height:0.5, background:'#E3E3E3', marginTop:0, marginBottom:10}}/>
+                                        </Row>
+                                    </div>
+                                    
+                                ))
+                            }
+                        </Container>
+                        <Container hidden={!jenelaProdutoVisible} style={{padding:0, marginTop:0}}>
+                            <Row>
+                                <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0, marginBottom:10}}/>
+                            </Row>
+                            <Row>
+                                <Col md='4' my-auto='true'>
+                                    <p><strong>ID</strong><input style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarPedido(e.target.valueAsNumber)} type="number" placeholder='99999'/></p>
+                                </Col>
+                                <Col md='8' my-auto='true'>
+                                    <p><strong>Nome</strong><input style={{fontWeight:'bold', marginLeft:10, width:300}} onChange={e => BuscarPedidoPorData(e.target.value)} maxLength="10" placeholder='Pastel...'/></p>
+                                </Col>
+                            </Row>
+                            <Row>
+                                <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0, marginBottom:10}}/>
+                            </Row>
+                            {
+                                produtos.map(produto => (
+                                    <Row key={produto.id} style={{justifyContent:'center', alignItems:'center',padding:0, margin:0, cursor:'pointer', borderBottomStyle:'solid', borderBottomColor:'#e3e3e3', borderBottomWidth:0.5, paddingTop:15, paddingBottom:15}}>
+                                        <Col xs='2' my-auto="true">
+                                            <Image src={img_indisponivel} roundedCircle style={{height:40, width:40, borderStyle:'solid', borderColor:'#e3e3e3', borderWidth:1}} alt='imagem do produto' />
                                         </Col>
-                                        <Col md='4' my-auto="true" style={{textAlign:'center', padding:0, margin:0}}>
-                                            <p style={{fontSize:20, width:'100%', marginBottom:5}}><strong>{Moeda(item.valor_total)}</strong></p>
-                                            {
-                                                item.entregue === 1 
-                                                ? <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> FinalizarPedido(item.id, idx)} style={{background:'#47CE43', color:'#FFF', fontWeight:'bold', borderColor:'#47CE43', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }} >Reabrir</Button>
-                                                : <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> FinalizarPedido(item.id, idx)} style={{background:'#FFF', color:'#F43d', fontWeight:'bold', borderColor:'#F43d', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }}>Finalizar</Button> 
-                                            } 
+                                        <Col xs='6' my-auto="true" style={{textAlign:'start', padding:0, margin:0}}>
+                                            <p><strong style={{color:'#F97A7A'}}>ID: {produto.id}</strong><strong> - {produto.nome}</strong></p>
+                                            <p style={{fontSize:13}}>{LimitarString(produto.descricao, 30)}</p>
+                                        </Col>
+                                        <Col xs='2' my-auto="true" style={{padding:0, margin:0}}>
+                                            <p style={{fontSize:20}}><strong>{Moeda(produto.valor_unitario)}</strong></p>
+                                        </Col>
+                                        <Col xs='2' my-auto="true" style={{padding:0, margin:0}}>
+                                            <Button style={{background:'#FFF', color:'#F43d', fontWeight:'bold', borderColor:'#F43d', margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }}>Alterar</Button>
                                         </Col>
                                     </Row>
-                                    <Row>
-                                        <Col style={{width:'100%', height:0.5, background:'#E3E3E3', marginTop:0, marginBottom:10}}/>
-                                    </Row>
-                                </div>
-                                
-                            ))
-                        }
-                    </Container>
-                    <Container style={{padding:0, marginTop:0}}>
-
-                    </Container>
+                                ))
+                            }
+                        </Container>
+                    </Col>
                 </Col>
-                <Col md='1'/>
+                
             </Row>
             <Modal show={showModal} onHide={()=> setShowModal(false)}>
-                <Modal.Header closeButton/>
+                <Modal.Header closeButton>
+                </Modal.Header>
                 <Modal.Body>
                     <Row style={{justifyContent:'center', alignItems:'center', flexDirection:'column'}}>
                         <p><strong style={{color:'#F97A7A', fontSize:20}}>Pedido: {id}</strong></p>
@@ -384,9 +452,43 @@ const Dashboard = () =>{
                     </Row>
                 </Modal.Body>
                 <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
-                <Button variant="danger">
+                <Button style={{background:'#F97A7A', width:200, borderColor:'#FFF'}}>
                     Imprimir
                 </Button>
+                </Modal.Footer>
+            </Modal>
+            <Modal show={true}>
+                <Modal.Header closeButton>
+                    <strong>Cadastro de Produto</strong>
+                </Modal.Header>
+                <Modal.Body>
+                    <Row style={{margin:0, padding:0, justifyContent:'center', alignItems:'center'}}>
+                        <Col>
+                        <p><strong>Titulo</strong></p>
+                        <input onChange={e => setPrdTitulo(e.target.value)} placeholder='Ex: Pastel Misto' style={{width:'100%'}}/>
+                        </Col>
+                    </Row>
+                    <Row style={{margin:0, padding:0, justifyContent:'center'}}>
+                        <Col xs='7'>
+                            <p><strong>Descrição</strong></p>
+                            <InputGroup style={{height:120, width:210, marginBottom:10}}>
+                                <FormControl onChange={e => setPrdDescricao(e.target.value)} as="textarea" aria-label="With textarea" maxLength={150} style={{resize: 'none' , margin:0, marginTop:0, background:'#F5F5F5', borderColor:'#E3E3E3'}}/>
+                            </InputGroup>
+                            <p><strong>Valor</strong></p>
+                            <input onChange={e => setPrdValorUnitario(e.target.value)} placeholder='0,00' type='number'/>
+                        </Col>
+                        <Col my-auto='true' xs='5'>
+                            <p><strong>Foto</strong></p>
+                            <Col my-auto='true' style={{borderStyle:'solid', borderWidth:1, borderColor:'#e3e3e3', textAlign:'center', padding:10, borderRadius:8, width:150}}>
+                                <Image src={img_indisponivel} roundedCircle style={{height:100, width:100, borderStyle:'solid', borderColor:'#e3e3e3', borderWidth:1}} alt='imagem do produto'/>
+                            </Col>
+                        </Col>
+                    </Row>
+                </Modal.Body>
+                <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
+                    <Button onClick={CadastrarProduto} style={{background:'#F97A7A', width:200, borderColor:'#FFF'}}>
+                        Salvar
+                    </Button>
                 </Modal.Footer>
             </Modal>
         </div>
