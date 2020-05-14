@@ -159,7 +159,6 @@ export default function Finalizar(){
         setValorTotal(SomarItensDouble(carrinho))
         setQtndItem(carrinho.length)
         setEntregue(false)
-        console.log(bairroRef)
     }
 
     function OptionsChargeBairro(value){
@@ -173,7 +172,6 @@ export default function Finalizar(){
     }
 
     function EnviarPedido(){
-        console.log(nomeClienteRef)
         if(nomeClienteRef.current.value === "" || nomeClienteRef.current.value.length < 3){
             alert('Campo nome obrigatorio')
             nomeClienteRef.current.focus()
@@ -433,12 +431,12 @@ export default function Finalizar(){
                 <Modal.Header closeButton>
                 <Modal.Title>{produtoSelecionado.nome}</Modal.Title>
                 </Modal.Header>
-                    <Modal.Body>Deseja realmente excluir o item {produtoSelecionado.nome}</Modal.Body>
-                <Modal.Footer>
-                <Button variant="secondary" onClick={()=> setConfirmShow(false)}>
+                    <Modal.Body style={{textAlign:'center'}}>Deseja realmente excluir o item {produtoSelecionado.nome}</Modal.Body>
+                    <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
+                <Button style={{background:'#CCC', width:100, borderColor:'#FFF'}} onClick={()=> setConfirmShow(false)}>
                     Não
                 </Button>
-                <Button variant="primary" onClick={()=> ConfirmarExclusao()}>
+                <Button style={{background:'#F97A7A', width:100, borderColor:'#FFF'}} onClick={()=> ConfirmarExclusao()}>
                     Sim
                 </Button>
                 </Modal.Footer>

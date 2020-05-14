@@ -1,6 +1,7 @@
 import React, {useEffect, useState, useRef} from 'react'
 import {useHistory} from 'react-router-dom'
 import Logo from '../../img/Logo.jpeg'
+import Delete from '../../img/delete.png'
 import img_indisponivel from '../../img/img_indisponivel.png'
 import { Container, Row, Col, Image, Button, Modal, Navbar, InputGroup, FormControl} from 'react-bootstrap';
 import Api from '../../services/api'
@@ -9,6 +10,8 @@ const Dashboard = () =>{
     const [pedidos, setPedidos] = useState([])
     const [produtos, setProdutos] = useState([])
     const [showModal, setShowModal] = useState(false)
+    const [showModalCadPrd, setShowModalCadPrd] = useState(false)
+    const [confirmShow, setConfirmShow] = useState(false)
     const [id, setId] = useState(0)
     const [createdAt, setCreatedAt] = useState('')
     const [nome_cliente, setNomeCliente] = useState('')
@@ -24,13 +27,21 @@ const Dashboard = () =>{
     const [frm_pagamento, setFrmPagamento] = useState('')
     const [itensPedido, setItensPedido] = useState([])
     const [tituloJanela, setTituloJanela] = useState('Pedidos')
-    const [jenelaPedidoVisible, setJenelaPedidoVisible] = useState(false)
+    const [jenelaPedidoVisible, setJenelaPedidoVisible] = useState(true)
     const [jenelaPerfilVisible, setJenelaPerfilVisible] = useState(false)
     const [jenelaProdutoVisible, setJenelaProdutoVisible] = useState(true)
     const [prd_titulo, setPrdTitulo] = useState('')
-    const [prd_descicao, setPrdDescricao] = useState('')
+    const [prd_descricao, setPrdDescricao] = useState('')
     const [prd_img_dir, setPrdImgDir] = useState('')
     const [prd_valor_unitario, setPrdValorUnitario] = useState(0)
+    const [prd_situacao, setPrdSituacao] = useState(0)
+    const [prd_situacaoDisable, setPrdSituacaoDisable] = useState(true)
+    const [idProdutoSelecionado, setIdProdutoSelecionado] = useState(0)
+    const [nomeProdutoSelecionado, setNomeProdutoSelecionado] = useState('')
+    const [descricaoProdutoSelecionado, setDescricaoProdutoSelecionado] = useState('')
+    const [valorProdutoSelecionado, setValorProdutoSelecionado] = useState(0)
+    const [ativoProdutoSelecionado, setAtivoProdutoSelecionado] = useState(true)
+    const [idVisible, setIdVisible] = useState(false)
     
 
     const history = useHistory()
@@ -44,7 +55,15 @@ const Dashboard = () =>{
     const btnProdutoTextRef = useRef()
     const bgBtnProdutoRef = useRef()
 
+    const nomePrdRef = useRef()
+    const descricaoPrdRef = useRef()
+    const dirImgPrdRef = useRef()
+    const valorUnitarioPrdRef = useRef()
+    const situacaoPrdRef = useRef()
+    const btnNovoProduto = useRef()
+
     const listBtnRefs = []
+    const listBtnAlterar = []
    
     useEffect(()=>{
         let islogged = localStorage.getItem('@delivery/islogged')
@@ -61,7 +80,7 @@ const Dashboard = () =>{
             setProdutos(response.data)
             localStorage.setItem('@delivery/produtos', JSON.stringify(response.data))
         })
-    },[])
+    },[produtos])
 
     function Moeda(value){
         return Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(value)
@@ -281,18 +300,133 @@ const Dashboard = () =>{
     }
 
     function CadastrarProduto(){
-        const produto = {
-            nome: prd_titulo,
-            descricao: prd_descicao,
-            dir_img: prd_img_dir,
-            valor_unitario: prd_valor_unitario
+        if(nomePrdRef.current.value === "" || nomePrdRef.current.value.length < 3){
+            alert('Campo nome obrigatorio')
+            nomePrdRef.current.focus()
+            return 
         }
 
-        Api.post('produto', produto).then(response =>{
+        if(descricaoPrdRef.current.value === "" || descricaoPrdRef.current.value.length < 3){
+            alert('Campo descrição obrigatorio')
+            descricaoPrdRef.current.focus()
+            return 
+        }
+
+        if(valorUnitarioPrdRef.current.value === '0' || valorUnitarioPrdRef.current.value === '' || valorUnitarioPrdRef.current.value === ','){
+            alert('Campo valor obrigatorio')
+            valorUnitarioPrdRef.current.focus()
+            return 
+        }
+
+        const produto = {
+            nome: prd_titulo,
+            descricao: prd_descricao,
+            dir_img: prd_img_dir,
+            valor_unitario: prd_valor_unitario,
+            ativo: prd_situacao
+        }
+
+        if(idVisible){
+            Api.put(`produto/${idProdutoSelecionado}/update`, produto).then(response =>{
+                if(response.status === 200){
+                    alert('Produto atualizado com sucesso!')
+                    let prd = produtos
+                    prd.forEach(element => {
+                        if(element.id === idProdutoSelecionado){
+                            element.nome = prd_titulo
+                            element.descricao = prd_descricao
+                            element.valor_unitario = prd_valor_unitario
+                            element.ativo = prd_situacao
+                        }
+                    });
+
+                    setProdutos(prd)
+                    localStorage.setItem('@delivery/produtos', JSON.stringify(prd))
+                    setIdProdutoSelecionado(0)
+                    setIdVisible(false)
+                    setPrdTitulo('')
+                    setPrdDescricao('')
+                    setPrdImgDir('')
+                    setPrdValorUnitario(0)
+                    setShowModalCadPrd(false)
+                }else{
+                    alert('Falha na atualização do produto, tente novamente!')
+                }
+            })
+            return
+        }else{
+            Api.post('produto', produto).then(response =>{
+                if(response.status === 200){
+                    alert('Cadastro realizado com sucesso! ID:'+response.data.Ok)
+                    let prd = produtos
+                    prd.push({
+                        id:response.data.Ok,
+                        nome: prd_titulo,
+                        descricao: prd_descricao,
+                        valor_unitario: prd_valor_unitario,
+                        ativo: prd_situacao
+                    })
+                    setProdutos(prd)
+                    localStorage.setItem('@delivery/produtos', JSON.stringify(prd))
+                    setIdVisible(false)
+                    setPrdTitulo('')
+                    setPrdDescricao('')
+                    setPrdImgDir('')
+                    setPrdValorUnitario(0)
+                    setShowModalCadPrd(false)
+                    
+                }else{
+                    alert('Falha ao cadastrar o produto, tente novamente!')
+                }
+            })
+        }
+    }
+
+    function ConfirmarExclusao(){
+        let idx = idProdutoSelecionado
+        Api.delete('produto/'+idx).then(response =>{
             if(response.status === 200){
-                alert('Cadastro realizado com sucesso: '+response.data.Ok)
+                if(response.data.Ok){
+                    setProdutos(produtos.filter(item=> item.id !== idx))
+                    setConfirmShow(false)
+                }else{
+                    alert('Produto associado a pedidos não pode ser excluido')
+                    setConfirmShow(false)
+                }
+                
             }
         })
+    }
+
+    function DeleteShow(id_produto, nome_produto){
+        setIdProdutoSelecionado(id_produto)
+        setNomeProdutoSelecionado(nome_produto)
+        setConfirmShow(true)
+    }
+
+
+    function EditarShow(id, nome, descricao, valorUnitario, ativo, idx){
+        setIdProdutoSelecionado(id)
+        setPrdTitulo(nome)
+        setPrdDescricao(descricao)
+        setPrdValorUnitario(valorUnitario)
+        setPrdSituacao(ativo)
+        setPrdSituacaoDisable(false)
+        setIdVisible(true)
+        setShowModalCadPrd(true)
+        listBtnAlterar[idx].blur()
+    }
+
+    function NovoProdutoShow(){
+        setPrdTitulo('')
+        setPrdDescricao('')
+        setPrdValorUnitario(0)
+        setIdProdutoSelecionado(0)
+        setPrdSituacao(1)
+        setPrdSituacaoDisable(true)
+        setIdVisible(false)
+        setShowModalCadPrd(true)
+        btnNovoProduto.current.blur()
     }
     
     return(
@@ -376,31 +510,40 @@ const Dashboard = () =>{
                                 <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0, marginBottom:10}}/>
                             </Row>
                             <Row>
-                                <Col md='4' my-auto='true'>
+                                <Col md='3' my-auto='true'>
                                     <p><strong>ID</strong><input style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarPedido(e.target.valueAsNumber)} type="number" placeholder='99999'/></p>
                                 </Col>
-                                <Col md='8' my-auto='true'>
-                                    <p><strong>Nome</strong><input style={{fontWeight:'bold', marginLeft:10, width:300}} onChange={e => BuscarPedidoPorData(e.target.value)} maxLength="10" placeholder='Pastel...'/></p>
+                                <Col md='6' my-auto='true'>
+                                    <p><strong>Nome</strong><input style={{fontWeight:'bold', marginLeft:10, width:240}} onChange={e => BuscarPedidoPorData(e.target.value)} maxLength="10" placeholder='Pastel...'/></p>
+                                </Col>
+                                <Col md='3' style={{textAlign:'center'}}>
+                                    <Button ref={btnNovoProduto} onClick={NovoProdutoShow} style={{background:'#FFF', color:'#F43d', fontWeight:'bold', borderColor:'#F43d', height:40, width:75, borderRadius:8, borderStyle:'solid', borderWidth:1}}>
+                                        Novo
+                                    </Button>
                                 </Col>
                             </Row>
                             <Row>
                                 <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0, marginBottom:10}}/>
                             </Row>
                             {
-                                produtos.map(produto => (
-                                    <Row key={produto.id} style={{justifyContent:'center', alignItems:'center',padding:0, margin:0, cursor:'pointer', borderBottomStyle:'solid', borderBottomColor:'#e3e3e3', borderBottomWidth:0.5, paddingTop:15, paddingBottom:15}}>
+                                produtos.map((produto, idx) => (
+                                    <Row key={produto.id} style={{justifyContent:'center', alignItems:'center',padding:0, margin:0, borderBottomStyle:'solid', borderBottomColor:'#e3e3e3', borderBottomWidth:0.5, paddingTop:15, paddingBottom:15}}>
                                         <Col xs='2' my-auto="true">
                                             <Image src={img_indisponivel} roundedCircle style={{height:40, width:40, borderStyle:'solid', borderColor:'#e3e3e3', borderWidth:1}} alt='imagem do produto' />
                                         </Col>
-                                        <Col xs='6' my-auto="true" style={{textAlign:'start', padding:0, margin:0}}>
+                                        <Col xs='5' my-auto="true" style={{textAlign:'start', padding:0, margin:0}}>
                                             <p><strong style={{color:'#F97A7A'}}>ID: {produto.id}</strong><strong> - {produto.nome}</strong></p>
-                                            <p style={{fontSize:13}}>{LimitarString(produto.descricao, 30)}</p>
+                                            <p style={{fontSize:13}}>{LimitarString(produto.descricao, 60)}</p>
+                                            {!produto.ativo && <span style={{fontSize:13, height:30, background:'#F43d', color:'#FFF', padding:3, borderRadius:3}}>Inativo</span>}
                                         </Col>
                                         <Col xs='2' my-auto="true" style={{padding:0, margin:0}}>
                                             <p style={{fontSize:20}}><strong>{Moeda(produto.valor_unitario)}</strong></p>
                                         </Col>
                                         <Col xs='2' my-auto="true" style={{padding:0, margin:0}}>
-                                            <Button style={{background:'#FFF', color:'#F43d', fontWeight:'bold', borderColor:'#F43d', margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }}>Alterar</Button>
+                                            <Button ref={ref => listBtnAlterar[idx] = ref} onClick={()=>EditarShow(produto.id, produto.nome, produto.descricao, produto.valor_unitario, produto.ativo, idx)} style={{background:'#FFF', color:'#F43d', fontWeight:'bold', borderColor:'#F43d', margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }}>Alterar</Button>
+                                        </Col>
+                                        <Col xs='1' my-auto="true" style={{padding:0, margin:0, cursor:'pointer',}}>
+                                            <Image src={Delete} onClick={()=>DeleteShow(produto.id, produto.nome)} roundedCircle style={{height:30, width:30}} alt='Deletar' />
                                         </Col>
                                     </Row>
                                 ))
@@ -408,7 +551,6 @@ const Dashboard = () =>{
                         </Container>
                     </Col>
                 </Col>
-                
             </Row>
             <Modal show={showModal} onHide={()=> setShowModal(false)}>
                 <Modal.Header closeButton>
@@ -457,31 +599,45 @@ const Dashboard = () =>{
                 </Button>
                 </Modal.Footer>
             </Modal>
-            <Modal show={true}>
+            <Modal show={showModalCadPrd} onHide={()=> setShowModalCadPrd(false)}>
                 <Modal.Header closeButton>
                     <strong>Cadastro de Produto</strong>
                 </Modal.Header>
                 <Modal.Body>
                     <Row style={{margin:0, padding:0, justifyContent:'center', alignItems:'center'}}>
                         <Col>
+                        {
+                            idVisible && <p><strong style={{color:'#F43d'}}>ID Produto: </strong>{idProdutoSelecionado}</p>
+                        }
                         <p><strong>Titulo</strong></p>
-                        <input onChange={e => setPrdTitulo(e.target.value)} placeholder='Ex: Pastel Misto' style={{width:'100%'}}/>
+                        <input ref={nomePrdRef} value={prd_titulo} onChange={e => setPrdTitulo(e.target.value)} placeholder='Ex: Pastel Misto' style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row style={{margin:0, padding:0, justifyContent:'center'}}>
                         <Col xs='7'>
                             <p><strong>Descrição</strong></p>
                             <InputGroup style={{height:120, width:210, marginBottom:10}}>
-                                <FormControl onChange={e => setPrdDescricao(e.target.value)} as="textarea" aria-label="With textarea" maxLength={150} style={{resize: 'none' , margin:0, marginTop:0, background:'#F5F5F5', borderColor:'#E3E3E3'}}/>
+                                <FormControl ref={descricaoPrdRef} value={prd_descricao} onChange={e => setPrdDescricao(e.target.value)} as="textarea" aria-label="With textarea" maxLength={150} style={{resize: 'none' , margin:0, marginTop:0, background:'#F5F5F5', borderColor:'#E3E3E3'}}/>
                             </InputGroup>
-                            <p><strong>Valor</strong></p>
-                            <input onChange={e => setPrdValorUnitario(e.target.value)} placeholder='0,00' type='number'/>
                         </Col>
                         <Col my-auto='true' xs='5'>
                             <p><strong>Foto</strong></p>
                             <Col my-auto='true' style={{borderStyle:'solid', borderWidth:1, borderColor:'#e3e3e3', textAlign:'center', padding:10, borderRadius:8, width:150}}>
                                 <Image src={img_indisponivel} roundedCircle style={{height:100, width:100, borderStyle:'solid', borderColor:'#e3e3e3', borderWidth:1}} alt='imagem do produto'/>
                             </Col>
+                        </Col>
+                    </Row>
+                    <Row  style={{margin:0, padding:0, justifyContent:'center', alignItems:'center'}}>
+                        <Col xs='6'>
+                            <p><strong>Valor</strong></p>
+                            <input ref={valorUnitarioPrdRef} value={prd_valor_unitario} onChange={e => setPrdValorUnitario(e.target.value)} placeholder='0,00' type='number'/>
+                        </Col>
+                        <Col xs='6'>
+                            <p><strong>Situação</strong></p>
+                            <select disabled={prd_situacaoDisable} value={prd_situacao} ref={situacaoPrdRef} onChange={e=> setPrdSituacao(e.target.value)} style={{width:'100%'}}>
+                                <option value={1}>Ativo</option>
+                                <option value={0}>Inativo</option>
+                            </select>
                         </Col>
                     </Row>
                 </Modal.Body>
@@ -491,6 +647,20 @@ const Dashboard = () =>{
                     </Button>
                 </Modal.Footer>
             </Modal>
+            <Modal show={confirmShow} onHide={()=>setConfirmShow(false)}>
+                <Modal.Header closeButton>
+                <Modal.Title>{nomeProdutoSelecionado}</Modal.Title>
+                </Modal.Header>
+                    <Modal.Body style={{textAlign:'center'}}>Deseja realmente excluir o produto: {nomeProdutoSelecionado}</Modal.Body>
+                <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
+                <Button style={{background:'#CCC', width:100, borderColor:'#FFF'}} onClick={()=> setConfirmShow(false)}>
+                    Não
+                </Button>
+                <Button style={{background:'#F97A7A', width:100, borderColor:'#FFF'}} onClick={()=> ConfirmarExclusao()}>
+                    Sim
+                </Button>
+                </Modal.Footer>
+            </Modal> 
         </div>
         
     )
