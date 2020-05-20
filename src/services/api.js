@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL:'http://localhost:2525',
+    baseURL:'https://api.finamassa.online',
 });
 
 export default api;

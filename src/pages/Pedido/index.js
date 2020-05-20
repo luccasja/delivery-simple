@@ -32,7 +32,7 @@ export default function Pedido (){
             setProdutos(JSON.parse(localStorage.getItem('@delivery/produtos')))
         }
         
-        api.get('/produto/ativo').then(response =>{
+        api.get('/produto/ativo/1').then(response =>{
             setProdutos(response.data)
             localStorage.setItem('@delivery/produtos', JSON.stringify(response.data))
         })

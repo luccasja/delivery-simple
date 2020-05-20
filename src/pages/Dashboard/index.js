@@ -1,10 +1,13 @@
 import React, {useEffect, useState, useRef} from 'react'
 import {useHistory} from 'react-router-dom'
 import Logo from '../../img/Logo.jpeg'
+import Print from '../../img/print.png'
 import Delete from '../../img/delete.png'
 import img_indisponivel from '../../img/img_indisponivel.png'
-import { Container, Row, Col, Image, Button, Modal, Navbar, InputGroup, FormControl} from 'react-bootstrap';
+import { Container, Row, Col, Image, Button, Modal, Navbar, InputGroup, FormControl, Spinner} from 'react-bootstrap';
+import ReactToPrint from "react-to-print";
 import Api from '../../services/api'
+import socketIOClient from 'socket.io-client'
 
 const Dashboard = () =>{
     const [pedidos, setPedidos] = useState([])
@@ -21,6 +24,7 @@ const Dashboard = () =>{
     const [bairro_entrega, setBairroEntrega] = useState('')
     const [complemento_entrega, setComplementoEntrega] = useState('')
     const [troco, setTroco] = useState(0)
+    const [frete, setFrete] = useState(0)
     const [qntd_item, setQntdItem] = useState(0)
     const [valor_total, setValorTotal] = useState(0)
     const [dt_finalizacao, setDtFinalizacao] = useState(null)
@@ -29,7 +33,7 @@ const Dashboard = () =>{
     const [tituloJanela, setTituloJanela] = useState('Pedidos')
     const [jenelaPedidoVisible, setJenelaPedidoVisible] = useState(true)
     const [jenelaPerfilVisible, setJenelaPerfilVisible] = useState(false)
-    const [jenelaProdutoVisible, setJenelaProdutoVisible] = useState(true)
+    const [jenelaProdutoVisible, setJenelaProdutoVisible] = useState(false)
     const [prd_titulo, setPrdTitulo] = useState('')
     const [prd_descricao, setPrdDescricao] = useState('')
     const [prd_img_dir, setPrdImgDir] = useState('')
@@ -42,7 +46,9 @@ const Dashboard = () =>{
     const [valorProdutoSelecionado, setValorProdutoSelecionado] = useState(0)
     const [ativoProdutoSelecionado, setAtivoProdutoSelecionado] = useState(true)
     const [idVisible, setIdVisible] = useState(false)
-    
+    const [loadding, setLoadding] = useState(true)
+    const [prdAtualizado, setPrdAtualizado] = useState(0)
+    const [tituloModalCadPrd, setTituloModalCadPrd] = useState('')
 
     const history = useHistory()
     const btnPerfilRef = useRef()
@@ -61,11 +67,21 @@ const Dashboard = () =>{
     const valorUnitarioPrdRef = useRef()
     const situacaoPrdRef = useRef()
     const btnNovoProduto = useRef()
+    const pedidoRef = useRef()
+    const pedidoImpRef = useRef()
 
     const listBtnRefs = []
     const listBtnAlterar = []
-   
+    const [serverURL, setServerURL] = useState('https://api.finamassa.online')
+
     useEffect(()=>{
+        const socket = socketIOClient(serverURL)
+        socket.on('hasPedido', receivedInfo=>{
+            if(receivedInfo){
+                setPrdAtualizado(receivedInfo)
+            }
+        })
+
         let islogged = localStorage.getItem('@delivery/islogged')
         if(islogged === false){
             history.replace('/login')
@@ -80,7 +96,23 @@ const Dashboard = () =>{
             setProdutos(response.data)
             localStorage.setItem('@delivery/produtos', JSON.stringify(response.data))
         })
-    },[produtos])
+
+        if(localStorage.getItem('@delivery/janela') !== null){
+            let janela = localStorage.getItem('@delivery/janela')
+            
+            if(janela === 'Pedido'){
+                ExibirJanelaPedido()
+                return
+            }
+            if(janela === 'Produto'){
+                ExibirJanelaProduto()
+                return
+            }
+            if(janela === 'Perfil'){
+                ExibirJanelaPerfil()
+            }
+        }
+    },[prdAtualizado])
 
     function Moeda(value){
         return Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(value)
@@ -149,22 +181,6 @@ const Dashboard = () =>{
     }
 
     function FinalizarPedido(id, indice){
-        if(listBtnRefs[indice].textContent === 'Reabrir'){
-            Api.put('pedido/'+id+'/reabrir').then(response =>{
-                if(response.status === 200){
-                    if(response.data.Ok){
-                        let lista = pedidos
-                        lista[indice].entregue = 0
-                        lista[indice].dt_finalizacao = null
-                        setPedidos(lista)
-                        BtnReabrirStyle(indice)
-                        localStorage.setItem('@delivery/pedidos', JSON.stringify(lista))
-                        listBtnRefs[indice].blur()
-                    }
-                }
-            })
-            return
-        }
         if(listBtnRefs[indice].textContent === 'Finalizar'){
             Api.put('pedido/'+id+'/registrar').then(response =>{
                 if(response.status === 200){
@@ -179,6 +195,37 @@ const Dashboard = () =>{
                     }
                 }
             })
+            return
+        }
+        if(listBtnRefs[indice].textContent === 'Entregue'){
+            Api.put('pedido/'+id+'/reabrir').then(response =>{
+                if(response.status === 200){
+                    if(response.data.Ok){
+                        let lista = pedidos
+                        lista[indice].entregue = 0
+                        lista[indice].dt_finalizacao = null
+                        setPedidos(lista)
+                        BtnRecebidoStyle(indice)
+                        localStorage.setItem('@delivery/pedidos', JSON.stringify(lista))
+                        listBtnRefs[indice].blur()
+                    }
+                }
+            })
+            return
+        }
+        if(listBtnRefs[indice].textContent === 'Receber'){
+            Api.put('pedido/'+id+'/receber').then(response =>{
+                if(response.status === 200){
+                    if(response.data.Ok){
+                        let lista = pedidos
+                        lista[indice].recebido = 1
+                        setPedidos(lista)
+                        BtnRecebidoStyle(indice)
+                        localStorage.setItem('@delivery/pedidos', JSON.stringify(lista))
+                        listBtnRefs[indice].blur()
+                    }
+                }
+            })
         }
     }
 
@@ -186,13 +233,13 @@ const Dashboard = () =>{
         listBtnRefs[indice].style.borderColor = '#47CE43'
         listBtnRefs[indice].style.background ='#47CE43'
         listBtnRefs[indice].style.color ='#FFF'
-        listBtnRefs[indice].textContent ='Reabrir'
+        listBtnRefs[indice].textContent ='Entregue'
     }
 
-    function BtnReabrirStyle(indice){
-        listBtnRefs[indice].style.borderColor = '#F43d'
-        listBtnRefs[indice].style.background ='#FFF'
-        listBtnRefs[indice].style.color ='#F43d'
+    function BtnRecebidoStyle(indice){
+        listBtnRefs[indice].style.borderColor = '#199cff'
+        listBtnRefs[indice].style.background ='#199cff'
+        listBtnRefs[indice].style.color ='#FFF'
         listBtnRefs[indice].textContent ='Finalizar'
     }
 
@@ -246,10 +293,12 @@ const Dashboard = () =>{
         setFrmPagamento(pedido.frm_pagamento)
         setValorTotal(pedido.valor_total)
         setTroco(pedido.troco)
+        setFrete(pedido.frete)
         setShowModal(true)
     }
 
     function ExibirJanelaPedido(){
+        localStorage.setItem('@delivery/janela','Pedido')
         setTituloJanela('Pedido')
         btnActive(bgBtnPedidoRef, btnPedidoRef, btnPedidoTextRef)
         btnInative(bgBtnPerfilRef, btnPerfilRef, btnPerfilTextRef)
@@ -260,6 +309,7 @@ const Dashboard = () =>{
     }
 
     function ExibirJanelaPerfil(){
+        localStorage.setItem('@delivery/janela','Perfil')
         setTituloJanela('Perfil')
         btnActive(bgBtnPerfilRef, btnPerfilRef, btnPerfilTextRef)
         btnInative(bgBtnPedidoRef, btnPedidoRef, btnPedidoTextRef)
@@ -271,6 +321,7 @@ const Dashboard = () =>{
     }
 
     function ExibirJanelaProduto(){
+        localStorage.setItem('@delivery/janela','Produto')
         setTituloJanela('Produto')
         btnActive(bgBtnProdutoRef, btnProdutoRef, btnProdutoTextRef)
         btnInative(bgBtnPedidoRef, btnPedidoRef, btnPedidoTextRef)
@@ -327,56 +378,41 @@ const Dashboard = () =>{
         }
 
         if(idVisible){
+            setLoadding(true)
             Api.put(`produto/${idProdutoSelecionado}/update`, produto).then(response =>{
                 if(response.status === 200){
-                    alert('Produto atualizado com sucesso!')
-                    let prd = produtos
-                    prd.forEach(element => {
-                        if(element.id === idProdutoSelecionado){
-                            element.nome = prd_titulo
-                            element.descricao = prd_descricao
-                            element.valor_unitario = prd_valor_unitario
-                            element.ativo = prd_situacao
-                        }
-                    });
-
-                    setProdutos(prd)
-                    localStorage.setItem('@delivery/produtos', JSON.stringify(prd))
+                    //alert('Produto atualizado com sucesso!')
                     setIdProdutoSelecionado(0)
                     setIdVisible(false)
                     setPrdTitulo('')
                     setPrdDescricao('')
                     setPrdImgDir('')
                     setPrdValorUnitario(0)
+                    setLoadding(false)
                     setShowModalCadPrd(false)
+                    setPrdAtualizado(idProdutoSelecionado)
                 }else{
                     alert('Falha na atualização do produto, tente novamente!')
+                    setLoadding(false)
                 }
             })
             return
         }else{
+            setLoadding(true)
             Api.post('produto', produto).then(response =>{
                 if(response.status === 200){
-                    alert('Cadastro realizado com sucesso! ID:'+response.data.Ok)
-                    let prd = produtos
-                    prd.push({
-                        id:response.data.Ok,
-                        nome: prd_titulo,
-                        descricao: prd_descricao,
-                        valor_unitario: prd_valor_unitario,
-                        ativo: prd_situacao
-                    })
-                    setProdutos(prd)
-                    localStorage.setItem('@delivery/produtos', JSON.stringify(prd))
+                    //alert('Cadastro realizado com sucesso! ID:'+response.data.Ok)
                     setIdVisible(false)
                     setPrdTitulo('')
                     setPrdDescricao('')
                     setPrdImgDir('')
                     setPrdValorUnitario(0)
                     setShowModalCadPrd(false)
-                    
+                    setLoadding(false)
+                    setPrdAtualizado(response.data.Ok.id)
                 }else{
                     alert('Falha ao cadastrar o produto, tente novamente!')
+                    setLoadding(false)
                 }
             })
         }
@@ -384,14 +420,18 @@ const Dashboard = () =>{
 
     function ConfirmarExclusao(){
         let idx = idProdutoSelecionado
+        setLoadding(true)
         Api.delete('produto/'+idx).then(response =>{
             if(response.status === 200){
                 if(response.data.Ok){
                     setProdutos(produtos.filter(item=> item.id !== idx))
                     setConfirmShow(false)
+                    setLoadding(false)
+                    setPrdAtualizado(idx)
                 }else{
                     alert('Produto associado a pedidos não pode ser excluido')
                     setConfirmShow(false)
+                    setLoadding(false)
                 }
                 
             }
@@ -404,8 +444,9 @@ const Dashboard = () =>{
         setConfirmShow(true)
     }
 
-
     function EditarShow(id, nome, descricao, valorUnitario, ativo, idx){
+        setTituloModalCadPrd('Alterar Cadastro de Produto')
+        setLoadding(false)
         setIdProdutoSelecionado(id)
         setPrdTitulo(nome)
         setPrdDescricao(descricao)
@@ -418,6 +459,8 @@ const Dashboard = () =>{
     }
 
     function NovoProdutoShow(){
+        setTituloModalCadPrd('Novo Produto')
+        setLoadding(false)
         setPrdTitulo('')
         setPrdDescricao('')
         setPrdValorUnitario(0)
@@ -427,6 +470,45 @@ const Dashboard = () =>{
         setIdVisible(false)
         setShowModalCadPrd(true)
         btnNovoProduto.current.blur()
+    }
+
+    function BuscarProdutoPorPK(id){
+        if(id === 0){
+            return
+        }
+
+        Api.get('produto/'+id).then(response =>{
+            if(response.status === 200){
+                if(response.data.length === 0){
+                    setProdutos(JSON.parse(localStorage.getItem('@delivery/produtos')))
+                    return
+                }
+                let resultado = []
+                resultado.push(response.data)
+                setProdutos(resultado)
+                return
+            }
+        })
+    }
+
+    function BuscarProdutoPorNome(nome){
+        console.log(nome)
+        if(nome === '' || nome === undefined){
+            setProdutos(JSON.parse(localStorage.getItem('@delivery/produtos')))
+            return
+        }
+
+        Api.get('produto/nome/'+nome).then(response =>{
+            console.log(response)
+            if(response.status === 200){
+                if(response.data.length === 0){
+                    setProdutos(JSON.parse(localStorage.getItem('@delivery/produtos')))
+                    return
+                }
+                setProdutos(response.data)
+                return
+            }
+        })
     }
     
     return(
@@ -487,14 +569,25 @@ const Dashboard = () =>{
                                                 <p>{item.nome_cliente} - {item.telefone}</p>
                                                 <p>{item.endereco_entrega}, {item.numero_entrega}, {item.bairro_entrega}, {item.complemento_entrega}</p>
                                                 <p>Quantidade de Itens: <strong>{item.qntd_item}</strong></p>
+                                                {!item.recebido && <span style={{fontSize:13, height:30, background:'#199cff', color:'#FFF', padding:3, paddingLeft:10, paddingRight:10, borderRadius:3}}>Novo</span>}
                                             </Col>
                                             <Col md='4' my-auto="true" style={{textAlign:'center', padding:0, margin:0}}>
                                                 <p style={{fontSize:20, width:'100%', marginBottom:5}}><strong>{Moeda(item.valor_total)}</strong></p>
                                                 {
-                                                    item.entregue === 1 
-                                                    ? <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> FinalizarPedido(item.id, idx)} style={{background:'#47CE43', color:'#FFF', fontWeight:'bold', borderColor:'#47CE43', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }} >Reabrir</Button>
-                                                    : <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> FinalizarPedido(item.id, idx)} style={{background:'#FFF', color:'#F43d', fontWeight:'bold', borderColor:'#F43d', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }}>Finalizar</Button> 
+                                                    item.entregue === 1 && item.recebido === 1
+                                                    ? <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> FinalizarPedido(item.id, idx)} style={{background:'#47CE43', color:'#FFF', fontWeight:'bold', borderColor:'#47CE43', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }} >Entregue</Button>
+                                                    : <span/>
+                                                }
+                                                {
+                                                    item.entregue === 0 && item.recebido === 1
+                                                    ? <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> FinalizarPedido(item.id, idx)} style={{background:'#199cff', color:'#FFF', fontWeight:'bold', borderColor:'#199cff', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }} >Finalizar</Button>
+                                                    : <span/>
                                                 } 
+                                                {
+                                                    item.entregue === 0 && item.recebido === 0
+                                                    ? <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> FinalizarPedido(item.id, idx)} style={{background:'#FFF', color:'#F43d', fontWeight:'bold', borderColor:'#F43d', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }}>Receber</Button> 
+                                                    : <span/>
+                                                }
                                             </Col>
                                         </Row>
                                         <Row>
@@ -511,10 +604,10 @@ const Dashboard = () =>{
                             </Row>
                             <Row>
                                 <Col md='3' my-auto='true'>
-                                    <p><strong>ID</strong><input style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarPedido(e.target.valueAsNumber)} type="number" placeholder='99999'/></p>
+                                    <p><strong>ID</strong><input style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarProdutoPorPK(e.target.valueAsNumber)} type="number" placeholder='99999'/></p>
                                 </Col>
                                 <Col md='6' my-auto='true'>
-                                    <p><strong>Nome</strong><input style={{fontWeight:'bold', marginLeft:10, width:240}} onChange={e => BuscarPedidoPorData(e.target.value)} maxLength="10" placeholder='Pastel...'/></p>
+                                    <p><strong>Nome</strong><input style={{fontWeight:'bold', marginLeft:10, width:240}} onChange={e => BuscarProdutoPorNome(e.target.value)} maxLength="100" placeholder='Pastel...'/></p>
                                 </Col>
                                 <Col md='3' style={{textAlign:'center'}}>
                                     <Button ref={btnNovoProduto} onClick={NovoProdutoShow} style={{background:'#FFF', color:'#F43d', fontWeight:'bold', borderColor:'#F43d', height:40, width:75, borderRadius:8, borderStyle:'solid', borderWidth:1}}>
@@ -534,7 +627,7 @@ const Dashboard = () =>{
                                         <Col xs='5' my-auto="true" style={{textAlign:'start', padding:0, margin:0}}>
                                             <p><strong style={{color:'#F97A7A'}}>ID: {produto.id}</strong><strong> - {produto.nome}</strong></p>
                                             <p style={{fontSize:13}}>{LimitarString(produto.descricao, 60)}</p>
-                                            {!produto.ativo && <span style={{fontSize:13, height:30, background:'#F43d', color:'#FFF', padding:3, borderRadius:3}}>Inativo</span>}
+                                            {!produto.ativo && <span style={{fontSize:13, height:30, background:'#F43d', color:'#FFF', padding:3, borderRadius:3, paddingLeft:10, paddingRight:10}}>Inativo</span>}
                                         </Col>
                                         <Col xs='2' my-auto="true" style={{padding:0, margin:0}}>
                                             <p style={{fontSize:20}}><strong>{Moeda(produto.valor_unitario)}</strong></p>
@@ -556,7 +649,7 @@ const Dashboard = () =>{
                 <Modal.Header closeButton>
                 </Modal.Header>
                 <Modal.Body>
-                    <Row style={{justifyContent:'center', alignItems:'center', flexDirection:'column'}}>
+                    <Row ref={pedidoRef} style={{justifyContent:'center', alignItems:'center', flexDirection:'column', margin:0, padding:0}}>
                         <p><strong style={{color:'#F97A7A', fontSize:20}}>Pedido: {id}</strong></p>
                         <p>Criação: <strong>{createdAt}</strong></p>
                         {
@@ -569,7 +662,7 @@ const Dashboard = () =>{
                         <p>Endereço:</p>
                         <p>{endereco_entrega}, {numero_entrega} {complemento_entrega}</p>
                         <p>{bairro_entrega}</p>
-                        <div style={{width:'30%', height:0.5, background:'#E3E3E3', marginTop:0, marginTop:10}}/>
+                        <div style={{width:'30%', height:0.5, background:'#E3E3E3', marginTop:10}}/>
                         <div style={{marginTop:20, marginBottom:10}}>
                         {
                             itensPedido.map(item=>(
@@ -588,20 +681,23 @@ const Dashboard = () =>{
                         <p><strong>Totais</strong></p>
                         <p>Itens incluso: <strong>{qntd_item}</strong></p>
                         <p>Forma de Pagamento: <strong>{frm_pagamento}</strong></p>
-                        <p>Frete: <strong>R$5,00</strong></p>
-                        <p>Total do Pedido: <strong>{valor_total}</strong></p>
-                        <p>Troco Para: <strong>{troco}</strong></p>
+                        <p>Frete: <strong>{Moeda(frete)}</strong></p>
+                        <p>Total do Pedido: <strong>{Moeda(valor_total)}</strong></p>
+                        <p>Troco Para: <strong>{Moeda(troco)}</strong></p>
                     </Row>
                 </Modal.Body>
                 <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
-                <Button style={{background:'#F97A7A', width:200, borderColor:'#FFF'}}>
-                    Imprimir
-                </Button>
+                <ReactToPrint
+                    trigger={()=><Button style={{background:'#F97A7A', width:200, borderColor:'#FFF'}}>
+                                    Imprimir
+                                </Button>}
+                    content={() => pedidoRef.current}
+                />
                 </Modal.Footer>
             </Modal>
             <Modal show={showModalCadPrd} onHide={()=> setShowModalCadPrd(false)}>
                 <Modal.Header closeButton>
-                    <strong>Cadastro de Produto</strong>
+                    <strong>{tituloModalCadPrd}</strong>
                 </Modal.Header>
                 <Modal.Body>
                     <Row style={{margin:0, padding:0, justifyContent:'center', alignItems:'center'}}>
@@ -643,6 +739,7 @@ const Dashboard = () =>{
                 </Modal.Body>
                 <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
                     <Button onClick={CadastrarProduto} style={{background:'#F97A7A', width:200, borderColor:'#FFF'}}>
+                    <Spinner animation="border" hidden={!loadding} variant="light" style={{height:20, width:20, marginRight:10}}/>
                         Salvar
                     </Button>
                 </Modal.Footer>
@@ -661,8 +758,27 @@ const Dashboard = () =>{
                 </Button>
                 </Modal.Footer>
             </Modal> 
-        </div>
         
+            <div ref={pedidoImpRef} style={{margin:0,padding:0, textAlign:'start', justifyContent:'start'}}>
+                <p style={{fontSize:25, color:'#000'}}>
+                    Teste de impressão para a impressora bematech
+                </p>
+                <br/>
+                <p style={{fontSize:40, color:'#000', textAlign:'center', width:500}}>
+                <strong>
+                    Pedido N 1
+                </strong>
+                </p>
+                <br/>
+                <p style={{fontSize:25, color:'#000'}}>
+                    Fulano da Silva
+                </p>
+                <br/>
+                <p style={{fontSize:25, color:'#000'}}>
+                    Rua Marechal castelo Branco, 46, coite city
+                </p>
+            </div>
+        </div>
     )
 
 }

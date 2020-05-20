@@ -4,13 +4,15 @@ import Pastel from '../../img/img_indisponivel.png'
 import {useHistory, useLocation} from 'react-router-dom'
 import { Container, Row, Col, Image, Button, Modal, Spinner} from 'react-bootstrap';
 import Api from '../../services/api'
+import socketIOClient from 'socket.io-client'
 
 export default function Finalizar(){
     const [showModal, setShowModal] = useState(false)
     const [carrinho, setCarrinho] = useState([])
     const [confirmShow, setConfirmShow] = useState(false)
     const [produtoSelecionado, setProdutoSelecionado] = useState('')
-    const [loadding, setLoadding] = useState(true)
+    const [loadding, setLoadding] = useState(false)
+    const [pageLoadding, setPageLoadding] = useState(true)
     const [btnEnviarPedidoDisabled, setBtnEnviarPedidoDisabled] = useState(false)
     const [nome_cliente, setNomeCliente] = useState('')
     const [telefone, setTelefone]= useState('')
@@ -21,7 +23,8 @@ export default function Finalizar(){
     const [frm_pagamento, setFromPagamento] = useState('Dinheiro')
     const [qntd_item, setQtndItem] = useState(0)
     const [entregue, setEntregue] = useState(0)
-    const [troco,setTroco] = useState(0)
+    const [troco, setTroco] = useState(0)
+    const [frete, setFrete] = useState(0)
     const [valor_total, setValorTotal] = useState(0)
     const [numero_pedido, setNumeroPedido] = useState(0)
     const [disabledForm, setDisabledForm] = useState(false)
@@ -43,15 +46,15 @@ export default function Finalizar(){
     let inputRefs = []
     let totalItemRefs = []
     let nomeProdutoRefs = []
+    const [serverURL, setServerURL] = useState('https://api.finamassa.online')
     
     
     useEffect(()=>{
-        if(location.state !== null && loadding){
+        if(location.state !== null && pageLoadding){
             setCarrinho(location.state)
         }
-        setLoadding(false)
-        
-    })
+        setPageLoadding(false)
+    },[])
     
     function handleCloseModal(){
         setShowModal(false)
@@ -165,8 +168,16 @@ export default function Finalizar(){
         if(value !== 'Outros'){
             setBairroEntrega(value)
             setInputBairroVisible(false)
+            if(value === "Cidade Jardim" || value === "Popular"){
+                setFrete(5)
+                return
+            }
+            if(value === 'Selecione seu bairro'){
+                setFrete(0)
+            }
             return
         }
+        setFrete(3)
         setBairroEntrega('')
         setInputBairroVisible(true)
     }
@@ -204,6 +215,7 @@ export default function Finalizar(){
                 return
             }
         }
+
         if(frmPagamentoRef.current.textContent === ""){
             alert('Selecione uma forma de pagamento')
             frmPagamentoRef.current.focus()
@@ -234,8 +246,10 @@ export default function Finalizar(){
             complemento_entrega,
             frm_pagamento,
             troco,
-            valor_total,
+            frete,
+            valor_total:(valor_total+frete),
             qntd_item,
+            recebido:0,
             entregue,
         }
 
@@ -248,6 +262,8 @@ export default function Finalizar(){
                         setConcluido(true)
                         setLoadding(false)
                         setBtnEnviarTxt("Ok")
+                        const socket = socketIOClient(serverURL)
+                        socket.emit('hasPedido', response.data.id)
                     })
                 }
             }
@@ -406,7 +422,8 @@ export default function Finalizar(){
                             <p><strong>Totais</strong></p>
                             <p>Itens incluso: <strong>{carrinho.length}</strong></p>
                             <p>Quantidade de Peças: <strong>{SomarQntPecas(carrinho)}</strong></p>
-                            <p>Total: <strong>{SomarItens(carrinho)}</strong></p>
+                            <p><span>Frete: </span><strong>{Moeda(frete)}</strong></p>
+                            <p>Total: <strong>{Moeda(SomarItensDouble(carrinho)+frete)}</strong></p>
                         </Col>
                     </Row>
                     <Row hidden={!concluido}>

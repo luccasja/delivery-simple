@@ -70,15 +70,10 @@ const Login = () => {
                         </Col>
                     </Row>
                     <Row>
-                        <Col>
+                        <Col style={{flexDirection:'column', justifyContent:'center', alignItems:'center', textAlign:'center'}}>
                             <Button onClick={Logar} style={{background:'#FF414D', border:0, width:250, height:50, borderRadius:8 }}>Entrar</Button>
                         </Col>
                     </Row>
-                    <Container>
-                        <Alert hidden={!erroVisible} my-auto="true" variant='danger' style={{width:250, marginTop:15, fontSize:13, border:0}}>
-                            Usuário ou senha invalida!
-                        </Alert>
-                    </Container>
                 </Col>
                 <Col></Col>
             </Row>
