@@ -4,7 +4,7 @@ import Logo from '../../img/Logo.jpeg'
 import Print from '../../img/print.png'
 import Delete from '../../img/delete.png'
 import img_indisponivel from '../../img/img_indisponivel.png'
-import { Container, Row, Col, Image, Button, Modal, Navbar, InputGroup, FormControl, Spinner} from 'react-bootstrap';
+import {DropdownButton, ButtonGroup, Dropdown, Container, Row, Col, Image, Button, Modal, Navbar, InputGroup, FormControl, Spinner} from 'react-bootstrap';
 import ReactToPrint from "react-to-print";
 import Api from '../../services/api'
 import socketIOClient from 'socket.io-client'
@@ -49,6 +49,9 @@ const Dashboard = () =>{
     const [loadding, setLoadding] = useState(true)
     const [prdAtualizado, setPrdAtualizado] = useState(0)
     const [tituloModalCadPrd, setTituloModalCadPrd] = useState('')
+    const [showStatusOnline, setShowStatusOnline] = useState(false)
+    const [showStatusOffline, setShowStatusOffline] = useState(true)
+    const [tituloStatus, setTituloStatus] = useState('Loja Fechada')
 
     const history = useHistory()
     const btnPerfilRef = useRef()
@@ -69,10 +72,11 @@ const Dashboard = () =>{
     const btnNovoProduto = useRef()
     const pedidoRef = useRef()
     const pedidoImpRef = useRef()
+    const dropStatusRef = useRef()
 
     const listBtnRefs = []
     const listBtnAlterar = []
-    const [serverURL, setServerURL] = useState('https://api.finamassa.online')
+    const [serverURL, setServerURL] = useState('http://localhost:3000')
 
     useEffect(()=>{
         const socket = socketIOClient(serverURL)
@@ -83,10 +87,11 @@ const Dashboard = () =>{
         })
 
         let islogged = localStorage.getItem('@delivery/islogged')
-        if(islogged === false){
-            history.replace('/login')
+        if(islogged === 'false'){
+            history.replace('/')
         }
-
+        
+        
         Api.get('pedido/data/'+GetFormattedDateIni()+'/'+GetFormattedDateFim()).then(response =>{
             setPedidos(response.data)
             localStorage.setItem('@delivery/pedidos', JSON.stringify(response.data))
@@ -95,6 +100,16 @@ const Dashboard = () =>{
         Api.get('produto').then(response =>{
             setProdutos(response.data)
             localStorage.setItem('@delivery/produtos', JSON.stringify(response.data))
+        })
+
+        Api.get('session').then(response=>{
+            if(response.status === 200){
+                if(response.data){
+                    setTituloStatus('Loja Aberta')
+                    setShowStatusOnline(true)
+                    setShowStatusOffline(false)
+                }
+            }
         })
 
         if(localStorage.getItem('@delivery/janela') !== null){
@@ -510,6 +525,48 @@ const Dashboard = () =>{
             }
         })
     }
+
+    function Sessao(situacao){
+        if(situacao === 1){
+            Api.post('session/'+1).then(response=>{
+                if(response.status === 200){
+                    if(response.data){
+                        setTituloStatus('Loja Aberta')
+                        setShowStatusOnline(true)
+                        setShowStatusOffline(false)
+                        dropStatusRef.current.blur()
+                        return
+                    }
+                }
+            })
+        }
+        if(situacao === 0){
+            Api.put('session/'+0).then(response=>{
+                if(response.status === 200){
+                    if(response.data){
+                        setTituloStatus('Loja Fechada')
+                        setShowStatusOnline(false)
+                        setShowStatusOffline(true)
+                        dropStatusRef.current.blur()
+                        return
+                    }
+                }
+            })
+        }
+    }
+
+    function LogOff(){
+        Api.delete('session').then(response=>{
+            if(response.status === 200){
+                if(response.data){
+                    localStorage.setItem('@delivery/islogged', false)
+                    history.replace('/')
+                    return
+                }
+                alert('Falha ao tentar sair do sistema, tente novamente')
+            }
+        })
+    }
     
     return(
         <div style={{margin:0, padding:0}}>
@@ -522,6 +579,30 @@ const Dashboard = () =>{
                         <Col>
                             <Image src={Logo} style={{height:50, width:50}} alt='logo' />
                             <p><strong>Fina Massa</strong></p>
+                        </Col>
+                    </Row>
+                    <Row style={{margin:0, padding:0, paddingBottom:3, borderBottomStyle:'solid', borderBottomWidth:0.5, borderBottomColor:'#e3e3e3'}}>
+                        <Col hidden={!showStatusOnline} xs='4' style={{margin:0, padding:0}}>
+                            <div style={{height:15, width:15, background:'#2ecc71', borderRadius:7.5, marginTop:10, marginLeft:50}}/>
+                        </Col>
+                        <Col hidden={!showStatusOffline} xs='4' style={{margin:0, padding:0}}>
+                            <div style={{height:15, width:15, background:'#e74c3c', borderRadius:7.5, marginTop:10, marginLeft:50}}/>
+                        </Col>
+                        
+                        <Col xs='8' style={{margin:0, padding:0, textAlign:'start'}}>
+                            <DropdownButton
+                                as={ButtonGroup}
+                                drop={'right'}
+                                title={tituloStatus}
+                                ref={dropStatusRef}
+                                variant={'Info'}
+                                style={{width:80, background:'#FFF'}}
+                                >
+                                <Dropdown.Item eventKey="1" onClick={()=>Sessao(1)}>Loja Aberta</Dropdown.Item>
+                                <Dropdown.Item eventKey="2" onClick={()=>Sessao(0)}>Loja Fechada</Dropdown.Item>
+                                <Dropdown.Divider />
+                                <Dropdown.Item eventKey="3" onClick={LogOff}>Sair</Dropdown.Item>
+                            </DropdownButton>
                         </Col>
                     </Row>
                     <Row ref={bgBtnPerfilRef}>

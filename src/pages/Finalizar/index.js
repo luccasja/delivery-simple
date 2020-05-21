@@ -46,12 +46,15 @@ export default function Finalizar(){
     let inputRefs = []
     let totalItemRefs = []
     let nomeProdutoRefs = []
-    const [serverURL, setServerURL] = useState('https://api.finamassa.online')
+    const [serverURL, setServerURL] = useState('http://localhost:3000')
     
     
     useEffect(()=>{
         if(location.state !== null && pageLoadding){
             setCarrinho(location.state)
+            if(carrinho.length === 0){
+                history.replace('/pedido')
+            }
         }
         setPageLoadding(false)
     },[])

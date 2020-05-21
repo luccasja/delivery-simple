@@ -14,7 +14,7 @@ const Login = () => {
     
     useEffect(()=>{
         let islogged = localStorage.getItem('@delivery/islogged')
-        if(islogged){
+        if(islogged === 'true'){
             history.replace('/dashboard')
         }
     },[])

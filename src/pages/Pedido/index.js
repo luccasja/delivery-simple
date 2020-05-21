@@ -27,7 +27,15 @@ export default function Pedido (){
     const history = useHistory()
 
     useEffect(()=>{
-        
+        api.get('session').then(response=>{
+            if(response.status === 200){
+                if(!response.data){
+                    history.replace('/')
+                }
+            }
+        })
+
+
         if(localStorage.getItem('@delivery/produtos') !== null){
             setProdutos(JSON.parse(localStorage.getItem('@delivery/produtos')))
         }
@@ -151,7 +159,12 @@ export default function Pedido (){
     }
 
     function IrAoCarrinho(){
-        history.replace('/finalizar', carrinho)
+        if(carrinho.length > 0){
+            history.replace('/finalizar', carrinho)
+        }else{
+            alert('Seu carrinho esta vazio!')
+        }
+        
     }
 
     return(
