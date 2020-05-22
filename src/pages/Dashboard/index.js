@@ -772,7 +772,7 @@ const Dashboard = () =>{
                     trigger={()=><Button style={{background:'#F97A7A', width:200, borderColor:'#FFF'}}>
                                     Imprimir
                                 </Button>}
-                    content={() => pedidoRef.current}
+                    content={() => pedidoImpRef.current}
                 />
                 </Modal.Footer>
             </Modal>
@@ -839,26 +839,55 @@ const Dashboard = () =>{
                 </Button>
                 </Modal.Footer>
             </Modal> 
-        
-            <div ref={pedidoImpRef} style={{margin:0,padding:0, textAlign:'start', justifyContent:'start'}}>
-                <p style={{fontSize:25, color:'#000'}}>
-                    Teste de impressão para a impressora bematech
-                </p>
-                <br/>
-                <p style={{fontSize:40, color:'#000', textAlign:'center', width:500}}>
-                <strong>
-                    Pedido N 1
-                </strong>
-                </p>
-                <br/>
-                <p style={{fontSize:25, color:'#000'}}>
-                    Fulano da Silva
-                </p>
-                <br/>
-                <p style={{fontSize:25, color:'#000'}}>
-                    Rua Marechal castelo Branco, 46, coite city
-                </p>
+            <div style={{display:'none'}}>
+                <div ref={pedidoImpRef} style={{margin:0,padding:0, textAlign:'start', justifyContent:'start'}}>
+                    <p style={{fontSize:30, color:'#000', textAlign:'center', width:450}}>
+                    <strong>
+                        Fina Massa
+                    </strong>
+                    </p>
+                    <br/>
+                    <p style={{fontSize:30, color:'#000', textAlign:'center', width:450}}>
+                    <strong>
+                        Pedido: {id}
+                    </strong>
+                    </p>
+                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>
+                        Criação: <strong>{createdAt}</strong>
+                    </p>
+                    {
+                        dt_finalizacao !== null
+                        ? <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>Finalização: <strong>{dt_finalizacao}</strong></p>
+                        : <p/>
+                    }
+                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}><strong>{nome_cliente}</strong></p>
+                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}><strong>{telefone}</strong></p>
+                    <p style={{fontSize:18, color:'#000', textAlign:'center', width:450}}>Endereço:</p>
+                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>{endereco_entrega}, {numero_entrega} {complemento_entrega}</p>
+                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>{bairro_entrega}</p>
+                    <div style={{fontSize:20, color:'#000', textAlign:'center', width:450, marginTop:20, marginBottom:10}}>
+                    {
+                        itensPedido.map(item=>(
+                            <div key={item.id}>
+                                <p style={{fontSize:18, color:'#000', textAlign:'center', width:450}}>{item.produto.nome} - <strong>{item.quantidade}x </strong>{Moeda(item.valor_unitario)} - <strong>{Moeda(item.valor_total)}</strong></p>
+                                {
+                                    item.observacoes !== '' 
+                                    ? <p style={{fontSize:18, color:'#000', textAlign:'center', width:450,  marginBottom:5}}><strong>Obs: </strong>{item.observacoes}</p>
+                                    : <p/>
+                                }
+                            </div>
+                        ))
+                    }
+                    </div>
+                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}><strong>Totais</strong></p>
+                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>Itens incluso: <strong>{qntd_item}</strong></p>
+                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>Forma de Pagamento: <strong>{frm_pagamento}</strong></p>
+                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>Frete: <strong>{Moeda(frete)}</strong></p>
+                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>Total do Pedido: <strong>{Moeda(valor_total)}</strong></p>
+                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>Troco Para: <strong>{Moeda(troco)}</strong></p>
+                </div>
             </div>
+            
         </div>
     )
 

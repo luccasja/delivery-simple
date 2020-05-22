@@ -19,7 +19,7 @@ export default function Pedido (){
     const [qntItens, setQntItens] = useState(0)
     const [observacoes, setObservacoes] = useState('')
     const [carrinho, setCarrinho] = useState([])
-    const [btnCarrinhoVisible, setBtnCarrinhoVisible] = useState(true)
+    const [btnCarrinhoVisible, setBtnCarrinhoVisible] = useState(false)
     const [btnAddValue, setBtnAddValue] = useState(0)
     const [produtos, setProdutos] = useState([])
 
@@ -35,14 +35,8 @@ export default function Pedido (){
             }
         })
 
-
-        if(localStorage.getItem('@delivery/produtos') !== null){
-            setProdutos(JSON.parse(localStorage.getItem('@delivery/produtos')))
-        }
-        
         api.get('/produto/ativo/1').then(response =>{
             setProdutos(response.data)
-            localStorage.setItem('@delivery/produtos', JSON.stringify(response.data))
         })
 
         if(location.state !== undefined){
@@ -129,6 +123,7 @@ export default function Pedido (){
         setBtnCarrinhoVisible(true)
         setShowModal(false)
         setBtnCarrinhoVisible(true)
+        console.log(carrinho)
     }
 
     function SomarItens(lista){

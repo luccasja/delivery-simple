@@ -31,6 +31,8 @@ export default function Finalizar(){
     const [concluido, setConcluido] = useState(false)
     const [btnEnviarTxt, setBtnEnviarTxt] = useState('Enviar Pedido')
     const [inputBairroVisible, setInputBairroVisible] = useState(false)
+    const [trocoVisible, setTrocoVisible] = useState(true)
+    const [busy, setBusy] = useState(false)
     const totalRef = useRef()
     const totalPecaRef = useRef()
     const nomeClienteRef = useRef()
@@ -51,10 +53,12 @@ export default function Finalizar(){
     
     useEffect(()=>{
         if(location.state !== null && pageLoadding){
-            setCarrinho(location.state)
-            if(carrinho.length === 0){
+            if(location.state === undefined){
                 history.replace('/pedido')
+                return
             }
+            setCarrinho(location.state)
+            console.log(location.state)
         }
         setPageLoadding(false)
     },[])
@@ -165,6 +169,8 @@ export default function Finalizar(){
         setValorTotal(SomarItensDouble(carrinho))
         setQtndItem(carrinho.length)
         setEntregue(false)
+        setTrocoVisible(true)
+        setTroco(0)
     }
 
     function OptionsChargeBairro(value){
@@ -185,7 +191,23 @@ export default function Finalizar(){
         setInputBairroVisible(true)
     }
 
+    function OptionChargeEspecie(value){
+        if(value === 'Cartão'){
+            setTroco(0)
+            setFromPagamento(value)
+            setTrocoVisible(false)
+        }else{
+            setFromPagamento(value)
+            setTrocoVisible(true)
+            setTroco(0)
+        }
+    }
+
     function EnviarPedido(){
+        if(busy){
+            return
+        }
+
         if(nomeClienteRef.current.value === "" || nomeClienteRef.current.value.length < 3){
             alert('Campo nome obrigatorio')
             nomeClienteRef.current.focus()
@@ -256,7 +278,7 @@ export default function Finalizar(){
             entregue,
         }
 
-
+        setBusy(true)
         Api.post('pedido', pedido).then(response =>{
             if(response.status === 200){
                 if(response.data.id > 0){
@@ -267,6 +289,7 @@ export default function Finalizar(){
                         setBtnEnviarTxt("Ok")
                         const socket = socketIOClient(serverURL)
                         socket.emit('hasPedido', response.data.id)
+                        setBusy(false)
                     })
                 }
             }
@@ -307,11 +330,7 @@ export default function Finalizar(){
                                             <p style={{fontSize:13}}>{LimitarString(item.descricao, 30)}</p>
                                             <p><strong>{Moeda(item.valor_unitario)}</strong></p>
                                             {item.observacoes !== '' 
-                                                ? <p style={{fontSize:13}}><strong>Observações: </strong></p>
-                                                : <p/>
-                                            }
-                                            {item.observacoes !== '' 
-                                                ? <p style={{fontSize:13}}><span>{LimitarString(item.observacao, 30)}</span></p>
+                                                ? <p style={{fontSize:13}}><strong>Observações: </strong>{LimitarString(item.observacoes, 30)}</p>
                                                 : <p/>
                                             }
                                         </Col>
@@ -377,47 +396,46 @@ export default function Finalizar(){
                     <Row>
                         <Col>
                             <p><strong>Nome</strong></p>
-                            <input ref={nomeClienteRef} value={nome_cliente} disabled={disabledForm} onChange={e => setNomeCliente(e.target.value)} style={{width:'100%'}}/>
+                            <input ref={nomeClienteRef} value={nome_cliente} disabled={disabledForm} onChange={e => setNomeCliente(e.target.value)} maxLength={80} style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row style={{marginBottom:30}}>
                         <Col>
                             <p><strong>Telefone</strong></p>
-                            <input ref={telefoneRef}  value={telefone} disabled={disabledForm} onChange={e => setTelefone(e.target.value)} placeholder='75 99999-9999' type='number' style={{width:'100%'}}/>
+                            <input ref={telefoneRef}  value={telefone} disabled={disabledForm} onChange={e => setTelefone(e.target.value)} placeholder='75 99999-9999' maxLength={13} type='number' style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row style={{marginBottom:20}}>
                         <Col>
                             <p><strong>Endereço</strong></p>
                             
-                            <input value={endereco_entrega} ref={ruaEntregaRef} disabled={disabledForm} onChange={e => setEnderecoEntrega(e.target.value)} placeholder='Rua' style={{width:'100%'}}/>
-                            <input value={numero_entrega} ref={numeroEntregaRef} disabled={disabledForm} onChange={e => setNumeroEntrega(e.target.value)} placeholder='Número' style={{width:'100%'}}/>
+                            <input value={endereco_entrega} ref={ruaEntregaRef} disabled={disabledForm} onChange={e => setEnderecoEntrega(e.target.value)} maxLength={80} placeholder='Rua' style={{width:'100%'}}/>
+                            <input value={numero_entrega} ref={numeroEntregaRef} disabled={disabledForm} onChange={e => setNumeroEntrega(e.target.value)} maxLength={80} placeholder='Número' style={{width:'100%'}}/>
                             <select ref={bairroSelecaoRef} style={{width:'100%'}} onChange={e => OptionsChargeBairro(e.target.value)}>
                                 <option>Selecione seu bairro</option>
                                 <option>Cidade Jardim</option>
                                 <option>Popular</option>
                                 <option>Outros</option>
                             </select>
-                            <input value={bairro_entrega} ref={bairroRef} disabled={disabledForm} hidden={!inputBairroVisible} onChange={e => setBairroEntrega(e.target.value)} placeholder='Bairro' style={{width:'100%'}}/>
-                            <input disabled={disabledForm} onChange={e => setComplementoEntrega(e.target.value)} placeholder='Complemento' style={{width:'100%'}}/>
+                            <input value={bairro_entrega} ref={bairroRef} disabled={disabledForm} hidden={!inputBairroVisible} onChange={e => setBairroEntrega(e.target.value)} placeholder='Bairro' maxLength={30} style={{width:'100%'}}/>
+                            <input disabled={disabledForm} onChange={e => setComplementoEntrega(e.target.value)} placeholder='Complemento' maxLength={100} style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row>
                         <Col>
                             <p><strong>Forma de Pagamento</strong></p>
-                            <select ref={frmPagamentoRef} disabled={disabledForm} onChange={e => setFromPagamento(e.target.value)} style={{width:'100%'}}>
+                            <select ref={frmPagamentoRef} disabled={disabledForm} onChange={e => OptionChargeEspecie(e.target.value)} style={{width:'100%'}}>
                                 <option>Dinheiro</option>
                                 <option>Cartão</option>
                             </select>
                         </Col>
                     </Row>
-                    <Row  style={{marginBottom:30}}>
+                    <Row hidden={!trocoVisible} style={{marginBottom:30}}>
                         <Col>
                             <p><strong>Troco Para?</strong></p>
                             <input ref={trocoRef} disabled={disabledForm} onChange={e => setTroco(e.target.value)} placeholder='0,00' type='number' style={{width:'100%'}}/>
                         </Col>
                     </Row>
-                    
                 </Modal.Body>
                 <Modal.Footer style={{justifyContent:'center', alignItems:'center', flexDirection:'column'}}>
                     <Row>
