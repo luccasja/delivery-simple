@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import avatar from '../../img/avatar.png'
 import {useHistory} from 'react-router-dom'
-import { Button, Container, Row, Col, Image, Alert} from 'react-bootstrap'
+import { Button, Container, Row, Col, Image} from 'react-bootstrap'
 import api from '../../services/api'
 
 
@@ -9,7 +9,7 @@ const Login = () => {
 
     const [user, setUser] = useState("")
     const [pass, setPass] = useState("")
-    const [erroVisible, setErroVisible] = useState(false)
+    //const [erroVisible, setErroVisible] = useState(false)
     const history = useHistory()
     
     useEffect(()=>{
@@ -31,9 +31,8 @@ const Login = () => {
                     }
                 })
             } catch (error) {
-                setErroVisible(true)
+                //setErroVisible(true)
             }
-           
         }
     }
 

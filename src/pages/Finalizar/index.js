@@ -5,6 +5,8 @@ import {useHistory, useLocation} from 'react-router-dom'
 import { Container, Row, Col, Image, Button, Modal, Spinner} from 'react-bootstrap';
 import Api from '../../services/api'
 import socketIOClient from 'socket.io-client'
+import InputMask from 'react-input-mask';
+ 
 
 export default function Finalizar(){
     const [showModal, setShowModal] = useState(false)
@@ -48,6 +50,10 @@ export default function Finalizar(){
     let inputRefs = []
     let totalItemRefs = []
     let nomeProdutoRefs = []
+
+    let testRef;
+
+    //const [serverURL, setServerURL] = useState('https://api.finamassa.online')
     const [serverURL, setServerURL] = useState('http://localhost:3000')
     
     
@@ -215,7 +221,7 @@ export default function Finalizar(){
         }
         if(telefoneRef.current.value === "" || telefoneRef.current.value.length < 9){
             alert('Campo telefone obrigatorio')
-            telefoneRef.current.focus()
+            telefoneRef.current.getInputDOMNode().focus()
             return
         }
         if(ruaEntregaRef.current.value === "" || ruaEntregaRef.current.value.length < 3){
@@ -296,7 +302,6 @@ export default function Finalizar(){
         })
         
     }
-    
 
     return(
         <Container>
@@ -402,7 +407,7 @@ export default function Finalizar(){
                     <Row style={{marginBottom:30}}>
                         <Col>
                             <p><strong>Telefone</strong></p>
-                            <input ref={telefoneRef}  value={telefone} disabled={disabledForm} onChange={e => setTelefone(e.target.value)} placeholder='75 99999-9999' maxLength={13} type='number' style={{width:'100%'}}/>
+                            <InputMask mask='(75) 99999-9999' maskChar=' ' ref={telefoneRef}  value={telefone} disabled={disabledForm} onChange={e => setTelefone(e.target.value)} placeholder='(75) 99999-9999' style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row style={{marginBottom:20}}>
@@ -418,7 +423,7 @@ export default function Finalizar(){
                                 <option>Outros</option>
                             </select>
                             <input value={bairro_entrega} ref={bairroRef} disabled={disabledForm} hidden={!inputBairroVisible} onChange={e => setBairroEntrega(e.target.value)} placeholder='Bairro' maxLength={30} style={{width:'100%'}}/>
-                            <input disabled={disabledForm} onChange={e => setComplementoEntrega(e.target.value)} placeholder='Complemento' maxLength={100} style={{width:'100%'}}/>
+                            <input disabled={disabledForm} onChange={e => setComplementoEntrega(e.target.value)} placeholder='Referência' maxLength={100} style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row>
@@ -433,7 +438,7 @@ export default function Finalizar(){
                     <Row hidden={!trocoVisible} style={{marginBottom:30}}>
                         <Col>
                             <p><strong>Troco Para?</strong></p>
-                            <input ref={trocoRef} disabled={disabledForm} onChange={e => setTroco(e.target.value)} placeholder='0,00' type='number' style={{width:'100%'}}/>
+                            <input ref={trocoRef} disabled={disabledForm} onChange={e => setTroco(e.target.value)} placeholder='0,00' maxLength={6} type='number' style={{width:'100%'}}/>
                         </Col>
                     </Row>
                 </Modal.Body>

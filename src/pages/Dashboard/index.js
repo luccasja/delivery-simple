@@ -1,19 +1,23 @@
 import React, {useEffect, useState, useRef} from 'react'
-import {useHistory} from 'react-router-dom'
+import {useHistory, useLocation} from 'react-router-dom'
 import Logo from '../../img/Logo.jpeg'
-import Print from '../../img/print.png'
+import connection from '../../img/connection.jpg'
+//import Print from '../../img/print.png'
 import Delete from '../../img/delete.png'
 import img_indisponivel from '../../img/img_indisponivel.png'
-import {DropdownButton, ButtonGroup, Dropdown, Container, Row, Col, Image, Button, Modal, Navbar, InputGroup, FormControl, Spinner} from 'react-bootstrap';
+import {Fade, Alert, DropdownButton, ButtonGroup, Dropdown, Container, Row, Col, Image, Button, Modal, Navbar, InputGroup, FormControl, Spinner} from 'react-bootstrap';
 import ReactToPrint from "react-to-print";
 import Api from '../../services/api'
 import socketIOClient from 'socket.io-client'
+import InputMask from 'react-input-mask';
 
 const Dashboard = () =>{
     const [pedidos, setPedidos] = useState([])
     const [produtos, setProdutos] = useState([])
     const [showModal, setShowModal] = useState(false)
     const [showModalCadPrd, setShowModalCadPrd] = useState(false)
+    const [showModalConnection, setShowModalConnection] = useState(false)
+    const [showAlertLojaFechada, setShowAlertLojaFechada] = useState(false)
     const [confirmShow, setConfirmShow] = useState(false)
     const [id, setId] = useState(0)
     const [createdAt, setCreatedAt] = useState('')
@@ -42,17 +46,16 @@ const Dashboard = () =>{
     const [prd_situacaoDisable, setPrdSituacaoDisable] = useState(true)
     const [idProdutoSelecionado, setIdProdutoSelecionado] = useState(0)
     const [nomeProdutoSelecionado, setNomeProdutoSelecionado] = useState('')
-    const [descricaoProdutoSelecionado, setDescricaoProdutoSelecionado] = useState('')
-    const [valorProdutoSelecionado, setValorProdutoSelecionado] = useState(0)
-    const [ativoProdutoSelecionado, setAtivoProdutoSelecionado] = useState(true)
     const [idVisible, setIdVisible] = useState(false)
     const [loadding, setLoadding] = useState(true)
     const [prdAtualizado, setPrdAtualizado] = useState(0)
     const [tituloModalCadPrd, setTituloModalCadPrd] = useState('')
     const [showStatusOnline, setShowStatusOnline] = useState(false)
-    const [showStatusOffline, setShowStatusOffline] = useState(true)
-    const [tituloStatus, setTituloStatus] = useState('Loja Fechada')
+    const [showStatusOffline, setShowStatusOffline] = useState(false)
+    const [showStatusDefault, setShowStatusDefault] = useState(true)
+    const [tituloStatus, setTituloStatus] = useState('Carregando...')
 
+    const location = useLocation()
     const history = useHistory()
     const btnPerfilRef = useRef()
     const btnPerfilTextRef = useRef()
@@ -76,7 +79,8 @@ const Dashboard = () =>{
 
     const listBtnRefs = []
     const listBtnAlterar = []
-    const [serverURL, setServerURL] = useState('http://localhost:3000')
+    //const [serverURL, setServerURL] = useState('https://api.finamassa.online')
+    const serverURL = 'http://localhost:3000'
 
     useEffect(()=>{
         const socket = socketIOClient(serverURL)
@@ -91,25 +95,42 @@ const Dashboard = () =>{
             history.replace('/')
         }
         
-        
         Api.get('pedido/data/'+GetFormattedDateIni()+'/'+GetFormattedDateFim()).then(response =>{
             setPedidos(response.data)
-            localStorage.setItem('@delivery/pedidos', JSON.stringify(response.data))
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
         })
 
         Api.get('produto').then(response =>{
             setProdutos(response.data)
-            localStorage.setItem('@delivery/produtos', JSON.stringify(response.data))
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
         })
 
         Api.get('session').then(response=>{
             if(response.status === 200){
                 if(response.data){
                     setTituloStatus('Loja Aberta')
+                    setShowStatusDefault(false)
                     setShowStatusOnline(true)
                     setShowStatusOffline(false)
+                    setShowAlertLojaFechada(false)
+                }else{
+                    setTituloStatus('Loja Fechada')
+                    setShowStatusOnline(false)
+                    setShowStatusDefault(false)
+                    setShowStatusOffline(true)
+                    setShowAlertLojaFechada(true)
                 }
             }
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
         })
 
         if(localStorage.getItem('@delivery/janela') !== null){
@@ -151,7 +172,6 @@ const Dashboard = () =>{
 
             if(res.status === 200){
                 if(res.data.length === 0){
-                    setPedidos(JSON.parse(localStorage.getItem('@delivery/pedidos')))
                     return 
                 }
                 let resultado = []
@@ -183,7 +203,6 @@ const Dashboard = () =>{
             Api.get('pedido/data/'+data_ini+'/'+data_fim).then(res=>{
                 if(res.status === 200){
                     if(res.data.length === 0){
-                        setPedidos(JSON.parse(localStorage.getItem('@delivery/pedidos')))
                         return 
                     }
                     setPedidos(res.data)
@@ -192,7 +211,6 @@ const Dashboard = () =>{
             })
             return
         }
-        setPedidos(JSON.parse(localStorage.getItem('@delivery/pedidos')))
     }
 
     function FinalizarPedido(id, indice){
@@ -205,23 +223,6 @@ const Dashboard = () =>{
                         lista[indice].dt_finalizacao = new Date()
                         setPedidos(lista)
                         BtnFinalizadoStyle(indice)
-                        localStorage.setItem('@delivery/pedidos', JSON.stringify(lista))
-                        listBtnRefs[indice].blur()
-                    }
-                }
-            })
-            return
-        }
-        if(listBtnRefs[indice].textContent === 'Entregue'){
-            Api.put('pedido/'+id+'/reabrir').then(response =>{
-                if(response.status === 200){
-                    if(response.data.Ok){
-                        let lista = pedidos
-                        lista[indice].entregue = 0
-                        lista[indice].dt_finalizacao = null
-                        setPedidos(lista)
-                        BtnRecebidoStyle(indice)
-                        localStorage.setItem('@delivery/pedidos', JSON.stringify(lista))
                         listBtnRefs[indice].blur()
                     }
                 }
@@ -236,12 +237,12 @@ const Dashboard = () =>{
                         lista[indice].recebido = 1
                         setPedidos(lista)
                         BtnRecebidoStyle(indice)
-                        localStorage.setItem('@delivery/pedidos', JSON.stringify(lista))
                         listBtnRefs[indice].blur()
                     }
                 }
             })
         }
+        listBtnRefs[indice].blur()
     }
 
     function BtnFinalizadoStyle(indice){
@@ -488,36 +489,29 @@ const Dashboard = () =>{
     }
 
     function BuscarProdutoPorPK(id){
-        if(id === 0){
+        if(id === '' || id === undefined){
             return
         }
 
         Api.get('produto/'+id).then(response =>{
             if(response.status === 200){
                 if(response.data.length === 0){
-                    setProdutos(JSON.parse(localStorage.getItem('@delivery/produtos')))
                     return
                 }
-                let resultado = []
-                resultado.push(response.data)
-                setProdutos(resultado)
+                setProdutos(response.data)
                 return
             }
         })
     }
 
     function BuscarProdutoPorNome(nome){
-        console.log(nome)
         if(nome === '' || nome === undefined){
-            setProdutos(JSON.parse(localStorage.getItem('@delivery/produtos')))
             return
         }
 
         Api.get('produto/nome/'+nome).then(response =>{
-            console.log(response)
             if(response.status === 200){
                 if(response.data.length === 0){
-                    setProdutos(JSON.parse(localStorage.getItem('@delivery/produtos')))
                     return
                 }
                 setProdutos(response.data)
@@ -534,6 +528,7 @@ const Dashboard = () =>{
                         setTituloStatus('Loja Aberta')
                         setShowStatusOnline(true)
                         setShowStatusOffline(false)
+                        setShowAlertLojaFechada(false)
                         dropStatusRef.current.blur()
                         return
                     }
@@ -547,6 +542,7 @@ const Dashboard = () =>{
                         setTituloStatus('Loja Fechada')
                         setShowStatusOnline(false)
                         setShowStatusOffline(true)
+                        setShowAlertLojaFechada(true)
                         dropStatusRef.current.blur()
                         return
                     }
@@ -573,8 +569,9 @@ const Dashboard = () =>{
             <Navbar style={{background:'#F43d'}}>
             <Navbar.Brand style={{color:'#FFF', textAlign:'center'}}>Fina Massa</Navbar.Brand>
             </Navbar>
+            
             <Row style={{width:'100%', margin:0}}>
-                <Col md='3' style={{background:'#FFF', textAlign:'center', maxWidth:250}}>
+                <Col md='3' style={{background:'#FFF', textAlign:'center'}}>
                     <Row style={{marginTop:20, paddingBottom:20, borderBottomStyle:'solid', borderBottomWidth:0.5, borderBottomColor:'#e3e3e3'}}>
                         <Col>
                             <Image src={Logo} style={{height:50, width:50}} alt='logo' />
@@ -587,6 +584,9 @@ const Dashboard = () =>{
                         </Col>
                         <Col hidden={!showStatusOffline} xs='4' style={{margin:0, padding:0}}>
                             <div style={{height:15, width:15, background:'#e74c3c', borderRadius:7.5, marginTop:10, marginLeft:50}}/>
+                        </Col>
+                        <Col hidden={!showStatusDefault} xs='4' style={{margin:0, padding:0}}>
+                            <div style={{height:15, width:15, background:'#E3E3E3', borderRadius:7.5, marginTop:10, marginLeft:50}}/>
                         </Col>
                         
                         <Col xs='8' style={{margin:0, padding:0, textAlign:'start'}}>
@@ -635,7 +635,7 @@ const Dashboard = () =>{
                                     <p><strong>Pedido</strong><input style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarPedido(e.target.valueAsNumber)} type="number" placeholder='99999'/></p>
                                 </Col>
                                 <Col md='6' my-auto='true'>
-                                    <p><strong>Data</strong><input style={{fontWeight:'bold', marginLeft:10, width:170}} onChange={e => BuscarPedidoPorData(e.target.value)} maxLength="10" placeholder='01/01/2020'/></p>
+                                    <p><strong>Data</strong><InputMask mask='99/99/9999' maskChar=' ' style={{fontWeight:'bold', marginLeft:10, width:170}} onChange={e => BuscarPedidoPorData(e.target.value)} placeholder='01/01/2020'/></p>
                                 </Col>
                             </Row>
                             <Row>
@@ -681,23 +681,23 @@ const Dashboard = () =>{
                         </Container>
                         <Container hidden={!jenelaProdutoVisible} style={{padding:0, marginTop:0}}>
                             <Row>
-                                <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0, marginBottom:10}}/>
+                                <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0, marginBottom:20}}/>
                             </Row>
-                            <Row>
+                            <Row style={{margin:0, padding:0}}>
                                 <Col md='3' my-auto='true'>
-                                    <p><strong>ID</strong><input style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarProdutoPorPK(e.target.valueAsNumber)} type="number" placeholder='99999'/></p>
+                                    <p><strong>ID</strong><InputMask mask='99999' maskChar=' ' style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarProdutoPorPK(e.target.value)} placeholder='99999'/></p>
                                 </Col>
                                 <Col md='6' my-auto='true'>
-                                    <p><strong>Nome</strong><input style={{fontWeight:'bold', marginLeft:10, width:240}} onChange={e => BuscarProdutoPorNome(e.target.value)} maxLength="100" placeholder='Pastel...'/></p>
+                                    <p><strong>Nome</strong><input style={{fontWeight:'bold', marginLeft:10}} onChange={e => BuscarProdutoPorNome(e.target.value)} maxLength="100" placeholder='Pastel...'/></p>
                                 </Col>
                                 <Col md='3' style={{textAlign:'center'}}>
-                                    <Button ref={btnNovoProduto} onClick={NovoProdutoShow} style={{background:'#FFF', color:'#F43d', fontWeight:'bold', borderColor:'#F43d', height:40, width:75, borderRadius:8, borderStyle:'solid', borderWidth:1}}>
+                                    <Button variant="info" ref={btnNovoProduto} onClick={NovoProdutoShow} style={{fontWeight:'bold', height:40, width:200, borderRadius:8}}>
                                         Novo
                                     </Button>
                                 </Col>
                             </Row>
                             <Row>
-                                <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0, marginBottom:10}}/>
+                                <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:10, marginBottom:10}}/>
                             </Row>
                             {
                                 produtos.map((produto, idx) => (
@@ -838,53 +838,151 @@ const Dashboard = () =>{
                     Sim
                 </Button>
                 </Modal.Footer>
+            </Modal>
+            <Modal show={showModalConnection} onHide={()=> setShowModalConnection(false)}>
+                <Modal.Header closeButton>
+                <Modal.Title>Ops...</Modal.Title>
+                </Modal.Header>
+                    <Modal.Body style={{textAlign:'center'}}>
+                        <Image roundedCircle="true" src={connection} style={{height:200, width:200, marginBottom:20}} alt='connection' />
+                        <p><strong>Ocorreu um problema de conexão com a internet!</strong></p>
+                    </Modal.Body>
+                <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
+                <Button style={{background:'#F97A7A', width:200, borderColor:'#FFF'}} onClick={()=>window.location.reload(false)}>
+                    Atualizar Página
+                </Button>
+                </Modal.Footer>
             </Modal> 
+            <Alert hidden={!showAlertLojaFechada} variant='warning' onClose={() => setShowAlertLojaFechada(false)} dismissible style={{marginBottom:0, textAlign:'center', position:'fixed', top:0, width:'100%'}}>
+                <strong>Atenção</strong>, sua loja esta como <strong>fechada</strong> ao publico!
+            </Alert>
+            
             <div style={{display:'none'}}>
-                <div ref={pedidoImpRef} style={{margin:0,padding:0, textAlign:'start', justifyContent:'start'}}>
-                    <p style={{fontSize:30, color:'#000', textAlign:'center', width:450}}>
+                <div ref={pedidoImpRef} style={{margin:0,padding:10, textAlign:'start', justifyContent:'start'}}>
+                    <p style={{fontSize:18, color:'#000', textAlign:'center', width:435}}>
                     <strong>
-                        Fina Massa
+                        Pastelaria Fina Massa
                     </strong>
                     </p>
-                    <br/>
-                    <p style={{fontSize:30, color:'#000', textAlign:'center', width:450}}>
+                    <p style={{color:'#000', textAlign:'center', width:435}}>
+                        <strong>--------</strong>
+                    </p>
+                    <p style={{fontSize:25, color:'#000', textAlign:'center', width:435}}>
                     <strong>
                         Pedido: {id}
                     </strong>
                     </p>
-                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>
+                    <p style={{fontSize:18, color:'#000', textAlign:'center', width:435}}>
                         Criação: <strong>{createdAt}</strong>
                     </p>
                     {
                         dt_finalizacao !== null
-                        ? <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>Finalização: <strong>{dt_finalizacao}</strong></p>
+                        ? <p style={{fontSize:18, color:'#000', textAlign:'center', width:435}}>Finalização: <strong>{dt_finalizacao}</strong></p>
                         : <p/>
                     }
-                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}><strong>{nome_cliente}</strong></p>
-                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}><strong>{telefone}</strong></p>
-                    <p style={{fontSize:18, color:'#000', textAlign:'center', width:450}}>Endereço:</p>
-                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>{endereco_entrega}, {numero_entrega} {complemento_entrega}</p>
-                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>{bairro_entrega}</p>
-                    <div style={{fontSize:20, color:'#000', textAlign:'center', width:450, marginTop:20, marginBottom:10}}>
+                    <p style={{color:'#000', textAlign:'center', width:435}}>
+                        <strong>--------</strong>
+                    </p>
+                    <p style={{fontSize:18, color:'#000'}}><strong>Cliente: </strong>{nome_cliente}</p>
+                    <p style={{fontSize:18, color:'#000'}}><strong>Telefone: </strong>{telefone}</p>
+                    <p style={{fontSize:18, color:'#000'}}><strong>Endereço: </strong>{endereco_entrega}, {numero_entrega}</p>
+                    <p style={{fontSize:18, color:'#000'}}><strong>Referência: </strong>{complemento_entrega}</p>
+                    <p style={{fontSize:18, color:'#000'}}><strong>Bairro: </strong>{bairro_entrega}</p>
+                    <p style={{color:'#000', textAlign:'center', width:435}}>
+                        <strong>--------</strong>
+                    </p>
+                    <div style={{width:435, textAlign:'center'}}>
+                        <Row style={{margin:0, padding:0}}>
+                            <Col xs='1' style={{margin:0, padding:0}}>
+                                Cod.
+                            </Col>
+                            <Col xs='5' style={{margin:0, padding:0}}>
+                                Produto
+                            </Col>
+                            <Col xs='2' style={{margin:0, padding:0}}>
+                                Qntd.
+                            </Col>
+                            <Col xs='2' style={{margin:0, padding:0}}>
+                                Vlr.
+                            </Col>
+                            <Col xs='2' style={{margin:0, padding:0}}>
+                                Total
+                            </Col>
+                        </Row>
+                    </div>
+                    <div style={{color:'#000', textAlign:'center', width:435, marginTop:20, marginBottom:10}}>
                     {
                         itensPedido.map(item=>(
                             <div key={item.id}>
-                                <p style={{fontSize:18, color:'#000', textAlign:'center', width:450}}>{item.produto.nome} - <strong>{item.quantidade}x </strong>{Moeda(item.valor_unitario)} - <strong>{Moeda(item.valor_total)}</strong></p>
+                                <Row style={{margin:0, padding:0}}>
+                                    <Col xs='1' style={{margin:0, padding:0}}>
+                                    {item.produto.id}
+                                    </Col>
+                                    <Col xs='5' style={{margin:0, padding:0}}>
+                                    {item.produto.nome}
+                                    </Col>
+                                    <Col xs='2' style={{margin:0, padding:0}}>
+                                    {item.quantidade}x
+                                    </Col>
+                                    <Col xs='2' style={{margin:0, padding:0}}>
+                                    {Moeda(item.valor_unitario)}
+                                    </Col>
+                                    <Col xs='2' style={{margin:0, padding:0}}>
+                                    {Moeda(item.valor_total)}
+                                    </Col>
+                                </Row>
                                 {
                                     item.observacoes !== '' 
-                                    ? <p style={{fontSize:18, color:'#000', textAlign:'center', width:450,  marginBottom:5}}><strong>Obs: </strong>{item.observacoes}</p>
+                                    ? <p style={{fontSize:18, color:'#000', marginBottom:5}}><strong>Obs: </strong>{item.observacoes}</p>
                                     : <p/>
                                 }
                             </div>
                         ))
                     }
                     </div>
-                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}><strong>Totais</strong></p>
-                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>Itens incluso: <strong>{qntd_item}</strong></p>
-                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>Forma de Pagamento: <strong>{frm_pagamento}</strong></p>
-                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>Frete: <strong>{Moeda(frete)}</strong></p>
-                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>Total do Pedido: <strong>{Moeda(valor_total)}</strong></p>
-                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:450}}>Troco Para: <strong>{Moeda(troco)}</strong></p>
+                    <p style={{fontSize:20, color:'#000', textAlign:'center', width:435}}><strong>Totais</strong></p>
+                    <div style={{fontSize:18, color:'#000', textAlign:'center', width:435}}>
+                        <Row style={{margin:0, padding:0}}>
+                            <Col xs='6' style={{textAlign:'end'}}>
+                            Itens incluso: 
+                            </Col>
+                            <Col xs='6' style={{textAlign:'start'}}>
+                            <strong>{qntd_item}</strong>
+                            </Col>
+                        </Row>
+                        <Row style={{margin:0, padding:0}}>
+                            <Col xs='6' style={{textAlign:'end'}}>
+                            Forma de Pagamento: 
+                            </Col>
+                            <Col xs='6' style={{textAlign:'start'}}>
+                            <strong>{frm_pagamento}</strong>
+                            </Col>
+                        </Row>
+                        <Row style={{margin:0, padding:0}}>
+                            <Col xs='6' style={{textAlign:'end'}}>
+                            Frete: 
+                            </Col>
+                            <Col xs='6' style={{textAlign:'start'}}>
+                            <strong>{Moeda(frete)}</strong>
+                            </Col>
+                        </Row>
+                        <Row style={{margin:0, padding:0}}>
+                            <Col xs='6' style={{textAlign:'end'}}>
+                            Total do Pedido: 
+                            </Col>
+                            <Col xs='6' style={{textAlign:'start'}}>
+                            <strong>{Moeda(valor_total)}</strong>
+                            </Col>
+                        </Row>
+                        <Row style={{margin:0, padding:0}}>
+                            <Col xs='6' style={{textAlign:'end'}}>
+                            Troco Para: 
+                            </Col>
+                            <Col xs='6' style={{textAlign:'start'}}>
+                            <strong>{Moeda(troco)}</strong>
+                            </Col>
+                        </Row>
+                    </div>
                 </div>
             </div>
             

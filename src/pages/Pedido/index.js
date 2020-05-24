@@ -276,7 +276,6 @@ export default function Pedido (){
                 </Button>
                 </Modal.Footer>
             </Modal>
-            
         </Container>
     )
 };
