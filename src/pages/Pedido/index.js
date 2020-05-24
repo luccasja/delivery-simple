@@ -2,6 +2,7 @@ import React, {useState, useEffect} from 'react'
 import Logo from '../../img/Logo.jpeg'
 import img_indisponivel from '../../img/img_indisponivel.png'
 import Add from '../../img/add.png'
+import connection from '../../img/connection.jpg'
 import {useHistory, useLocation} from 'react-router-dom'
 import {Button, Container, Row, Col, Image, Modal, InputGroup, FormControl} from 'react-bootstrap'
 import api from '../../services/api'
@@ -22,6 +23,7 @@ export default function Pedido (){
     const [btnCarrinhoVisible, setBtnCarrinhoVisible] = useState(false)
     const [btnAddValue, setBtnAddValue] = useState(0)
     const [produtos, setProdutos] = useState([])
+    const [showModalConnection, setShowModalConnection] = useState(false)
 
     const location = useLocation()
     const history = useHistory()
@@ -30,13 +32,22 @@ export default function Pedido (){
         api.get('session').then(response=>{
             if(response.status === 200){
                 if(!response.data){
+                    alert('A loja no momento encontra-se fechada!')
                     history.replace('/')
                 }
             }
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
         })
 
         api.get('/produto/ativo/1').then(response =>{
             setProdutos(response.data)
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
         })
 
         if(location.state !== undefined){
@@ -123,7 +134,6 @@ export default function Pedido (){
         setBtnCarrinhoVisible(true)
         setShowModal(false)
         setBtnCarrinhoVisible(true)
-        console.log(carrinho)
     }
 
     function SomarItens(lista){
@@ -154,6 +164,20 @@ export default function Pedido (){
     }
 
     function IrAoCarrinho(){
+        api.get('session').then(response=>{
+            if(response.status === 200){
+                if(!response.data){
+                    alert('Infelizmente não será possivel prosseguir com o pedido, pois a loja encontra-se fechada!')
+                    history.replace('/')
+                }
+            }
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
+        })
+
+
         if(carrinho.length > 0){
             history.replace('/finalizar', carrinho)
         }else{
@@ -175,7 +199,7 @@ export default function Pedido (){
                             <p className='cabecalho-titulo'><strong>Pastelaria Fina Massa</strong></p>
                             <p className='cabecalho-subtitulo'>Novo Pedido</p>
                         </Col>
-                        <Col xs='2' ></Col>
+                        <Col xs='2'></Col>
                     </Row>
                     <Row>
                         <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:10, marginBottom:0}}/>
@@ -217,7 +241,7 @@ export default function Pedido (){
                         <Row>
                             <Col/>
                             <Col md='8'>
-                                <Button  variant="danger" style={{width:300}} onClick={IrAoCarrinho}>
+                                <Button  variant="success" style={{width:300}} onClick={IrAoCarrinho}>
                                     Ir para o Carrinho <span>{valorTotal}</span>
                                 </Button>
                             </Col>
@@ -271,8 +295,22 @@ export default function Pedido (){
                     </Row>
                 </Modal.Body>
                 <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
-                <Button variant="danger" onClick={handleAdicionar}>
+                <Button variant="info" onClick={handleAdicionar}>
                     Adicionar {Moeda(btnAddValue)}
+                </Button>
+                </Modal.Footer>
+            </Modal>
+            <Modal show={showModalConnection} onHide={()=> setShowModalConnection(false)}>
+                <Modal.Header closeButton>
+                <Modal.Title>Ops...</Modal.Title>
+                </Modal.Header>
+                    <Modal.Body style={{textAlign:'center'}}>
+                        <Image roundedCircle="true" src={connection} style={{height:200, width:200, marginBottom:20}} alt='connection' />
+                        <p><strong>Ocorreu um problema de conexão com a internet!</strong></p>
+                    </Modal.Body>
+                <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
+                <Button style={{background:'#F97A7A', width:200, borderColor:'#FFF'}} onClick={()=>window.location.reload(false)}>
+                    Atualizar Página
                 </Button>
                 </Modal.Footer>
             </Modal>

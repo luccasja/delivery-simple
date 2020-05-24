@@ -5,7 +5,7 @@ import connection from '../../img/connection.jpg'
 //import Print from '../../img/print.png'
 import Delete from '../../img/delete.png'
 import img_indisponivel from '../../img/img_indisponivel.png'
-import {Fade, Alert, DropdownButton, ButtonGroup, Dropdown, Container, Row, Col, Image, Button, Modal, Navbar, InputGroup, FormControl, Spinner} from 'react-bootstrap';
+import {Alert, DropdownButton, ButtonGroup, Dropdown, Container, Row, Col, Image, Button, Modal, Navbar, InputGroup, FormControl, Spinner} from 'react-bootstrap';
 import ReactToPrint from "react-to-print";
 import Api from '../../services/api'
 import socketIOClient from 'socket.io-client'
@@ -22,6 +22,7 @@ const Dashboard = () =>{
     const [id, setId] = useState(0)
     const [createdAt, setCreatedAt] = useState('')
     const [nome_cliente, setNomeCliente] = useState('')
+    const [cpf, setCpf] = useState('')
     const [telefone, setTelefone] = useState('')
     const [endereco_entrega, setEnderecoEntrega] = useState('')
     const [numero_entrega, setNumeroEntrega] = useState('')
@@ -54,6 +55,9 @@ const Dashboard = () =>{
     const [showStatusOffline, setShowStatusOffline] = useState(false)
     const [showStatusDefault, setShowStatusDefault] = useState(true)
     const [tituloStatus, setTituloStatus] = useState('Carregando...')
+    const [pedidoLoading, setPedidoLoading] = useState(true)
+    const [produtoLoading, setProdutoLoading] = useState(true)
+    const [perfilLoading, setPerfilLoading] = useState(false)
 
     const location = useLocation()
     const history = useHistory()
@@ -97,16 +101,20 @@ const Dashboard = () =>{
         
         Api.get('pedido/data/'+GetFormattedDateIni()+'/'+GetFormattedDateFim()).then(response =>{
             setPedidos(response.data)
+            setPedidoLoading(false)
         }).catch(error=>{
             console.log(error)
+            setPedidoLoading(false)
             setShowModalConnection(true)
             return
         })
 
         Api.get('produto').then(response =>{
             setProdutos(response.data)
+            setProdutoLoading(false)
         }).catch(error=>{
             console.log(error)
+            setProdutoLoading(false)
             setShowModalConnection(true)
             return
         })
@@ -179,6 +187,10 @@ const Dashboard = () =>{
                 setPedidos(resultado)
                 return
             }
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
         })
     }
 
@@ -208,6 +220,10 @@ const Dashboard = () =>{
                     setPedidos(res.data)
                     return
                 }
+            }).catch(error=>{
+                console.log(error)
+                setShowModalConnection(true)
+                return
             })
             return
         }
@@ -226,6 +242,10 @@ const Dashboard = () =>{
                         listBtnRefs[indice].blur()
                     }
                 }
+            }).catch(error=>{
+                console.log(error)
+                setShowModalConnection(true)
+                return
             })
             return
         }
@@ -240,6 +260,10 @@ const Dashboard = () =>{
                         listBtnRefs[indice].blur()
                     }
                 }
+            }).catch(error=>{
+                console.log(error)
+                setShowModalConnection(true)
+                return
             })
         }
         listBtnRefs[indice].blur()
@@ -295,15 +319,21 @@ const Dashboard = () =>{
         setId(pedido.id)
         await Api.get('pedido/'+pedido.id+'/item').then(response=>{
             setItensPedido(response.data)
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
         })
         setCreatedAt(DataFormat(pedido.createdAt))
         if(pedido.dt_finalizacao !== null){
             setDtFinalizacao(DataFormat(pedido.dt_finalizacao))
         }
         setNomeCliente(pedido.nome_cliente)
+        setCpf(pedido.cpf)
         setTelefone(pedido.telefone)
         setEnderecoEntrega(pedido.endereco_entrega)
         setNumeroEntrega(pedido.numero_entrega)
+        setComplementoEntrega(pedido.complemento_entrega)
         setBairroEntrega(pedido.bairro_entrega)
         setQntdItem(pedido.qntd_item)
         setFrmPagamento(pedido.frm_pagamento)
@@ -451,6 +481,10 @@ const Dashboard = () =>{
                 }
                 
             }
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
         })
     }
 
@@ -489,23 +523,60 @@ const Dashboard = () =>{
     }
 
     function BuscarProdutoPorPK(id){
+        id = id.replace(' ','')
         if(id === '' || id === undefined){
+            Api.get('produto/').then(response =>{
+                if(response.status === 200){
+                    if(response.data.length === 0){
+                        return
+                    }
+                    setProdutos(response.data)
+                    return
+                }
+            }).catch(error=>{
+                console.log(error)
+                setShowModalConnection(true)
+                return
+            })
             return
         }
-
+        setProdutoLoading(true)
         Api.get('produto/'+id).then(response =>{
             if(response.status === 200){
                 if(response.data.length === 0){
                     return
+                }else{
+                    let result = []
+                    result.push(response.data)
+                    setProdutoLoading(false)
+                    if(result.length > 0){
+                        setProdutos(result)
+                    }
                 }
-                setProdutos(response.data)
-                return
             }
+        }).catch(error=>{
+            console.log(error)
+            setProdutoLoading(false)
+            setShowModalConnection(true)
+            return
         })
     }
 
     function BuscarProdutoPorNome(nome){
         if(nome === '' || nome === undefined){
+            Api.get('produto/').then(response =>{
+                if(response.status === 200){
+                    if(response.data.length === 0){
+                        return
+                    }
+                    setProdutos(response.data)
+                    return
+                }
+            }).catch(error=>{
+                console.log(error)
+                setShowModalConnection(true)
+                return
+            })
             return
         }
 
@@ -517,6 +588,10 @@ const Dashboard = () =>{
                 setProdutos(response.data)
                 return
             }
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
         })
     }
 
@@ -533,6 +608,10 @@ const Dashboard = () =>{
                         return
                     }
                 }
+            }).catch(error=>{
+                console.log(error)
+                setShowModalConnection(true)
+                return
             })
         }
         if(situacao === 0){
@@ -547,6 +626,10 @@ const Dashboard = () =>{
                         return
                     }
                 }
+            }).catch(error=>{
+                console.log(error)
+                setShowModalConnection(true)
+                return
             })
         }
     }
@@ -561,6 +644,10 @@ const Dashboard = () =>{
                 }
                 alert('Falha ao tentar sair do sistema, tente novamente')
             }
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
         })
     }
     
@@ -641,6 +728,9 @@ const Dashboard = () =>{
                             <Row>
                                 <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0, marginBottom:10}}/>
                             </Row>
+                            <Row hidden={!pedidoLoading} style={{margin:0, padding:0, justifyContent:'center', alignItems:'center', height:200}}>
+                                <Spinner animation="border" variant="info" />
+                            </Row>
                             {
                                 pedidos.map((item, idx) =>(
                                     <div key={item.id}>
@@ -685,7 +775,7 @@ const Dashboard = () =>{
                             </Row>
                             <Row style={{margin:0, padding:0}}>
                                 <Col md='3' my-auto='true'>
-                                    <p><strong>ID</strong><InputMask mask='99999' maskChar=' ' style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarProdutoPorPK(e.target.value)} placeholder='99999'/></p>
+                                    <p><strong>ID</strong><input type='number' style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarProdutoPorPK(e.target.value)} maxLength={5} placeholder='99999'/></p>
                                 </Col>
                                 <Col md='6' my-auto='true'>
                                     <p><strong>Nome</strong><input style={{fontWeight:'bold', marginLeft:10}} onChange={e => BuscarProdutoPorNome(e.target.value)} maxLength="100" placeholder='Pastel...'/></p>
@@ -698,6 +788,9 @@ const Dashboard = () =>{
                             </Row>
                             <Row>
                                 <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:10, marginBottom:10}}/>
+                            </Row>
+                            <Row hidden={!produtoLoading} style={{margin:0, padding:0, justifyContent:'center', alignItems:'center', height:200}}>
+                                <Spinner animation="border" variant="info" />
                             </Row>
                             {
                                 produtos.map((produto, idx) => (
@@ -739,6 +832,10 @@ const Dashboard = () =>{
                             : <p/>
                         }
                         <p><strong>{nome_cliente}</strong></p>
+                        {
+                            cpf !== '' && 
+                            <p><strong>CPF: </strong>{cpf}</p>
+                        }
                         <p><strong>{telefone}</strong></p>
                         <p>Endereço:</p>
                         <p>{endereco_entrega}, {numero_entrega} {complemento_entrega}</p>
@@ -884,10 +981,14 @@ const Dashboard = () =>{
                         <strong>--------</strong>
                     </p>
                     <p style={{fontSize:18, color:'#000'}}><strong>Cliente: </strong>{nome_cliente}</p>
+                    {
+                        cpf !== '' && 
+                        <p style={{fontSize:18, color:'#000'}}><strong>CPF: </strong>{cpf}</p>
+                    }
                     <p style={{fontSize:18, color:'#000'}}><strong>Telefone: </strong>{telefone}</p>
                     <p style={{fontSize:18, color:'#000'}}><strong>Endereço: </strong>{endereco_entrega}, {numero_entrega}</p>
-                    <p style={{fontSize:18, color:'#000'}}><strong>Referência: </strong>{complemento_entrega}</p>
                     <p style={{fontSize:18, color:'#000'}}><strong>Bairro: </strong>{bairro_entrega}</p>
+                    <p style={{fontSize:18, color:'#000'}}><strong>Referência: </strong>{complemento_entrega}</p>
                     <p style={{color:'#000', textAlign:'center', width:435}}>
                         <strong>--------</strong>
                     </p>

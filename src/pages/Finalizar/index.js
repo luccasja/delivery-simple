@@ -6,6 +6,7 @@ import { Container, Row, Col, Image, Button, Modal, Spinner} from 'react-bootstr
 import Api from '../../services/api'
 import socketIOClient from 'socket.io-client'
 import InputMask from 'react-input-mask';
+import connection from '../../img/connection.jpg'
  
 
 export default function Finalizar(){
@@ -17,6 +18,7 @@ export default function Finalizar(){
     const [pageLoadding, setPageLoadding] = useState(true)
     const [btnEnviarPedidoDisabled, setBtnEnviarPedidoDisabled] = useState(false)
     const [nome_cliente, setNomeCliente] = useState('')
+    const [cpf, setCpf] = useState('')
     const [telefone, setTelefone]= useState('')
     const [endereco_entrega, setEnderecoEntrega] = useState('')
     const [numero_entrega, setNumeroEntrega] = useState('')
@@ -34,15 +36,19 @@ export default function Finalizar(){
     const [btnEnviarTxt, setBtnEnviarTxt] = useState('Enviar Pedido')
     const [inputBairroVisible, setInputBairroVisible] = useState(false)
     const [trocoVisible, setTrocoVisible] = useState(true)
+    const [showModalConnection, setShowModalConnection] = useState(false)
+
     const [busy, setBusy] = useState(false)
     const totalRef = useRef()
     const totalPecaRef = useRef()
     const nomeClienteRef = useRef()
+    const cpfRef= useRef()
     const telefoneRef = useRef()
     const ruaEntregaRef = useRef()
     const numeroEntregaRef = useRef()
     const bairroSelecaoRef = useRef()
     const bairroRef = useRef()
+    const complemento_entregaRef = useRef()
     const frmPagamentoRef = useRef()
     const trocoRef = useRef()
     const history = useHistory()
@@ -51,21 +57,32 @@ export default function Finalizar(){
     let totalItemRefs = []
     let nomeProdutoRefs = []
 
-    let testRef;
-
     //const [serverURL, setServerURL] = useState('https://api.finamassa.online')
     const [serverURL, setServerURL] = useState('http://localhost:3000')
     
     
     useEffect(()=>{
-        if(location.state !== null && pageLoadding){
-            if(location.state === undefined){
-                history.replace('/pedido')
-                return
+        Api.get('session').then(response=>{
+            if(response.status === 200){
+                if(!response.data){
+                    alert('Infelizmente não será possivel prosseguir com o pedido, pois a loja encontra-se fechada!')
+                    history.replace('/')
+                    return
+                }else{
+                    if(location.state !== null && pageLoadding){
+                        if(location.state === undefined){
+                            history.replace('/pedido')
+                            return
+                        }
+                        setCarrinho(location.state)
+                    }
+                }
             }
-            setCarrinho(location.state)
-            console.log(location.state)
-        }
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
+        })
         setPageLoadding(false)
     },[])
     
@@ -106,6 +123,9 @@ export default function Finalizar(){
     function ConfirmarExclusao(){
         let idx = produtoSelecionado.id_produto
         setCarrinho(carrinho.filter(item=> item.id_produto !== idx))
+        if(carrinho.length === 1){
+            history.replace('/pedido')
+        }
         setConfirmShow(false)
     }
 
@@ -170,6 +190,20 @@ export default function Finalizar(){
     }
 
     function Finalizar(){
+        Api.get('session').then(response=>{
+            if(response.status === 200){
+                if(!response.data){
+                    alert('Infelizmente não será possivel enviar o pedido, pois a loja encontra-se fechada!')
+                    history.replace('/')
+                    return
+                }
+            }
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
+        })
+
         setShowModal(true)
         setQtndItem(carrinho.length)
         setValorTotal(SomarItensDouble(carrinho))
@@ -209,6 +243,35 @@ export default function Finalizar(){
         }
     }
 
+    function ValidarCPF(strCPF){
+        if(strCPF === '' || strCPF === undefined){
+            return false
+        }
+        strCPF = strCPF.replace('.','')
+        strCPF = strCPF.replace('.','')
+        strCPF = strCPF.replace('-','')
+        var Soma;
+        var Resto;
+        Soma = 0;
+        if (strCPF == "00000000000") return false;
+        
+        for (let i=1; i<=9; i++) Soma = Soma + parseInt(strCPF.substring(i-1, i)) * (11 - i);
+        Resto = (Soma * 10) % 11;
+    
+        if ((Resto == 10) || (Resto == 11))  Resto = 0;
+        if (Resto != parseInt(strCPF.substring(9, 10)) ) return false;
+    
+        Soma = 0;
+        for (let i = 1; i <= 10; i++) Soma = Soma + parseInt(strCPF.substring(i-1, i)) * (12 - i);
+        Resto = (Soma * 10) % 11;
+    
+        if ((Resto == 10) || (Resto == 11))  Resto = 0;
+        if (Resto != parseInt(strCPF.substring(10, 11) ) ) return false;
+        setCpf(strCPF)
+        return true;
+
+    }
+
     function EnviarPedido(){
         if(busy){
             return
@@ -219,6 +282,20 @@ export default function Finalizar(){
             nomeClienteRef.current.focus()
             return
         }
+
+        if(valor_total > 50){
+            if(cpfRef.current.value === "" || cpfRef.current.value.length < 14){
+                alert('Campo CPF obrigatorio')
+                cpfRef.current.getInputDOMNode().focus()
+                return
+            }
+            if(!ValidarCPF(cpfRef.current.value)){
+                alert('Informe um CPF válido')
+                cpfRef.current.getInputDOMNode().focus()
+                return
+            }
+        }
+        
         if(telefoneRef.current.value === "" || telefoneRef.current.value.length < 9){
             alert('Campo telefone obrigatorio')
             telefoneRef.current.getInputDOMNode().focus()
@@ -247,6 +324,12 @@ export default function Finalizar(){
             }
         }
 
+        if(complemento_entregaRef.current.value === "" || complemento_entregaRef.current.value.length < 4){
+            alert('Campo Referencia obrigatorio')
+            complemento_entregaRef.current.focus()
+            return
+        }
+
         if(frmPagamentoRef.current.textContent === ""){
             alert('Selecione uma forma de pagamento')
             frmPagamentoRef.current.focus()
@@ -270,6 +353,7 @@ export default function Finalizar(){
 
         const pedido = {
             nome_cliente,
+            cpf,
             telefone,
             endereco_entrega,
             numero_entrega,
@@ -299,6 +383,10 @@ export default function Finalizar(){
                     })
                 }
             }
+        }).catch(error=>{
+            console.log(error)
+            setShowModalConnection(true)
+            return
         })
         
     }
@@ -373,7 +461,7 @@ export default function Finalizar(){
                         <Col style={{width:'100%', height:0.5, background:'#F3B442', marginTop:0}}/>
                     </Row>
                     <Row style={{justifyContent:'center', alignItems:'center', borderBottomStyle:'solid', borderBottomColor:'#e3e3e3', borderBottomWidth:0.5, paddingBottom:10, marginBottom:10, marginTop:10}}>
-                        <Button variant="danger" style={{width:250, height:50}} onClick={()=> history.replace('/pedido', carrinho)}>
+                        <Button variant="info" style={{width:250, height:50}} onClick={()=> history.replace('/pedido', carrinho)}>
                             Adicionar Mais Itens
                         </Button>
                     </Row>
@@ -386,7 +474,7 @@ export default function Finalizar(){
                         </Col>
                     </Row>
                     <Row  style={{justifyContent:'center', alignItems:'center'}}>
-                        <Button variant="danger" style={{width:250, height:50}} onClick={Finalizar}>
+                        <Button variant="success" style={{width:250, height:50}} onClick={Finalizar}>
                             Finalizar
                         </Button>
                     </Row>
@@ -402,12 +490,20 @@ export default function Finalizar(){
                         <Col>
                             <p><strong>Nome</strong></p>
                             <input ref={nomeClienteRef} value={nome_cliente} disabled={disabledForm} onChange={e => setNomeCliente(e.target.value)} maxLength={80} style={{width:'100%'}}/>
+                            {
+                                (valor_total > 50) &&
+                                <div>
+                                    <p><strong>CPF</strong></p>
+                                    <InputMask mask="999.999.999-99" maskChar=' ' placeholder="000.000.000-00" ref={cpfRef} value={cpf} disabled={disabledForm} onChange={e => setCpf(e.target.value)} style={{width:'100%'}}/>
+                                </div>  
+                            }
+                            
                         </Col>
                     </Row>
                     <Row style={{marginBottom:30}}>
                         <Col>
                             <p><strong>Telefone</strong></p>
-                            <InputMask mask='(75) 99999-9999' maskChar=' ' ref={telefoneRef}  value={telefone} disabled={disabledForm} onChange={e => setTelefone(e.target.value)} placeholder='(75) 99999-9999' style={{width:'100%'}}/>
+                            <InputMask mask='(99) 99999-9999' maskChar=' ' ref={telefoneRef}  value={telefone} disabled={disabledForm} onChange={e => setTelefone(e.target.value)} placeholder='(75) 99999-9999' style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row style={{marginBottom:20}}>
@@ -423,7 +519,7 @@ export default function Finalizar(){
                                 <option>Outros</option>
                             </select>
                             <input value={bairro_entrega} ref={bairroRef} disabled={disabledForm} hidden={!inputBairroVisible} onChange={e => setBairroEntrega(e.target.value)} placeholder='Bairro' maxLength={30} style={{width:'100%'}}/>
-                            <input disabled={disabledForm} onChange={e => setComplementoEntrega(e.target.value)} placeholder='Referência' maxLength={100} style={{width:'100%'}}/>
+                            <input disabled={disabledForm} ref={complemento_entregaRef} onChange={e => setComplementoEntrega(e.target.value)} placeholder='Referência' maxLength={100} style={{width:'100%'}}/>
                         </Col>
                     </Row>
                     <Row>
@@ -461,7 +557,7 @@ export default function Finalizar(){
                     </Row>
                     <Row>
                         <Col>
-                            <Button variant="danger" style={{width:200}} onClick={EnviarPedido} disabled={btnEnviarPedidoDisabled}>
+                            <Button variant="success" style={{width:200}} onClick={EnviarPedido} disabled={btnEnviarPedidoDisabled}>
                                 <Spinner animation="border" hidden={!loadding} variant="light" style={{height:20, width:20, marginRight:10}}/> 
                                 <span>{btnEnviarTxt}</span>
                             </Button>
@@ -469,14 +565,27 @@ export default function Finalizar(){
                     </Row>
                 </Modal.Footer>
             </Modal>
-
+            <Modal show={showModalConnection} onHide={()=> setShowModalConnection(false)}>
+                <Modal.Header closeButton>
+                <Modal.Title>Ops...</Modal.Title>
+                </Modal.Header>
+                    <Modal.Body style={{textAlign:'center'}}>
+                        <Image roundedCircle="true" src={connection} style={{height:200, width:200, marginBottom:20}} alt='connection' />
+                        <p><strong>Ocorreu um problema de conexão com a internet!</strong></p>
+                    </Modal.Body>
+                <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
+                <Button style={{background:'#F97A7A', width:200, borderColor:'#FFF'}} onClick={()=>window.location.reload(false)}>
+                    Atualizar Página
+                </Button>
+                </Modal.Footer>
+            </Modal>
             <Modal show={confirmShow} onHide={()=>setConfirmShow(false)}>
                 <Modal.Header closeButton>
                 <Modal.Title>{produtoSelecionado.nome}</Modal.Title>
                 </Modal.Header>
                     <Modal.Body style={{textAlign:'center'}}>Deseja realmente excluir o item {produtoSelecionado.nome}</Modal.Body>
                     <Modal.Footer style={{justifyContent:'center', alignItems:'center'}}>
-                <Button style={{background:'#CCC', width:100, borderColor:'#FFF'}} onClick={()=> setConfirmShow(false)}>
+                <Button variant="info" style={{width:100}} onClick={()=> setConfirmShow(false)}>
                     Não
                 </Button>
                 <Button style={{background:'#F97A7A', width:100, borderColor:'#FFF'}} onClick={()=> ConfirmarExclusao()}>
