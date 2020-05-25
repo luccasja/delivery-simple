@@ -57,8 +57,8 @@ export default function Finalizar(){
     let totalItemRefs = []
     let nomeProdutoRefs = []
 
-    const serverURL = 'https://api.finamassa.online'
-    //const serverURL = 'http://localhost:3000'
+    //const serverURL = 'https://api.finamassa.online'
+    const serverURL = 'http://localhost:3000'
     
     
     useEffect(()=>{

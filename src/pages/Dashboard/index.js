@@ -10,6 +10,7 @@ import ReactToPrint from "react-to-print";
 import Api from '../../services/api'
 import socketIOClient from 'socket.io-client'
 import InputMask from 'react-input-mask';
+import Switch from '../../components/Switch'
 
 const Dashboard = () =>{
     const [pedidos, setPedidos] = useState([])
@@ -58,7 +59,8 @@ const Dashboard = () =>{
     const [pedidoLoading, setPedidoLoading] = useState(true)
     const [produtoLoading, setProdutoLoading] = useState(true)
     const [perfilLoading, setPerfilLoading] = useState(false)
-
+    const [value, setValue] = useState(false);
+    const [value2, setValue2] = useState(false);
     const location = useLocation()
     const history = useHistory()
     const btnPerfilRef = useRef()
@@ -83,8 +85,8 @@ const Dashboard = () =>{
 
     const listBtnRefs = []
     const listBtnAlterar = []
-    const serverURL = 'https://api.finamassa.online'
-    //const serverURL = 'http://localhost:3000'
+    //const serverURL = 'https://api.finamassa.online'
+    const serverURL = 'http://localhost:3000'
 
     useEffect(()=>{
         const socket = socketIOClient(serverURL)
@@ -712,6 +714,8 @@ const Dashboard = () =>{
                     <Col style={{background:'#FFF', borderRadius:8, height:'100%'}}>
                         <Container style={{textAlign:'center'}}>
                             <p style={{fontSize:20, padding:10}}><strong >{tituloJanela}</strong></p>
+                            <Switch btnSize={26} lableHeight={30} isOn={value} handleToggle={() => setValue(!value)} />
+                            <Switch id={'btn2'} isOn={value2} onColor="#EF476F" handleToggle={() => setValue2(!value2)}  />
                         </Container>
                         <Container hidden={!jenelaPedidoVisible} style={{padding:0, marginTop:0}}>
                             <Row>
