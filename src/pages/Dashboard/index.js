@@ -83,8 +83,7 @@ const Dashboard = () =>{
 
     const listBtnRefs = []
     const listBtnAlterar = []
-    //const [serverURL, setServerURL] = useState('https://api.finamassa.online')
-    const serverURL = 'http://localhost:3000'
+    const serverURL = 'https://api.finamassa.online'
 
     useEffect(()=>{
         const socket = socketIOClient(serverURL)
