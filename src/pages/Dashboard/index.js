@@ -84,6 +84,7 @@ const Dashboard = () =>{
     const listBtnRefs = []
     const listBtnAlterar = []
     const serverURL = 'https://api.finamassa.online'
+    //const serverURL = 'http://localhost:3000'
 
     useEffect(()=>{
         const socket = socketIOClient(serverURL)
@@ -637,7 +638,7 @@ const Dashboard = () =>{
         Api.delete('session').then(response=>{
             if(response.status === 200){
                 if(response.data){
-                    localStorage.setItem('@delivery/islogged', false)
+                    localStorage.setItem('@delivery/islogged', 'false')
                     history.replace('/')
                     return
                 }

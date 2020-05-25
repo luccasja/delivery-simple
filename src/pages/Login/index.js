@@ -26,7 +26,7 @@ const Login = () => {
                 await api.post('/usuario/auth', auth).then((resultado)=>{
                     console.log(resultado.data)
                     if(resultado.data.autenticado){
-                        localStorage.setItem('@delivery/islogged', resultado.data.autenticado)
+                        localStorage.setItem('@delivery/islogged', 'true')
                         history.replace('/dashboard')
                     }
                 })
