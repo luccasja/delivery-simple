@@ -714,8 +714,6 @@ const Dashboard = () =>{
                     <Col style={{background:'#FFF', borderRadius:8, height:'100%'}}>
                         <Container style={{textAlign:'center'}}>
                             <p style={{fontSize:20, padding:10}}><strong >{tituloJanela}</strong></p>
-                            <Switch btnSize={26} lableHeight={30} isOn={value} handleToggle={() => setValue(!value)} />
-                            <Switch id={'btn2'} isOn={value2} onColor="#EF476F" handleToggle={() => setValue2(!value2)}  />
                         </Container>
                         <Container hidden={!jenelaPedidoVisible} style={{padding:0, marginTop:0}}>
                             <Row>

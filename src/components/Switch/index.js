@@ -1,9 +1,20 @@
-import React, {useState} from 'react';
+import React from 'react';
 import './Switch.css';
 
-const Switch = ({handleToggle, onColor='#06D6A0', btnSize, lableHeight, isOn, id = 'new'}) => {
+const Switch = ({handleToggle, onColor='#06D6A0', offColor='grey', btnSize, lableHeight, isOn, id = 'new'}) => {
+    /*Exemplo de utilização: 
+    <Switch btnSize={26} 
+        lableHeight={30} 
+        offColor='#EF476F' 
+        isOn={value}
+        handleToggle={() => setValue(!value)}
+    />
+    */
+
     const btnStyle = btnSize !== undefined ? {height:btnSize, width:btnSize} : {}
-    const lableStyle = lableHeight !== undefined ? {height:lableHeight, width:lableHeight*2, background: isOn && onColor} : {background: isOn && onColor}
+    const lableStyle = lableHeight !== undefined 
+        ? {height:lableHeight, width:lableHeight*2, background: isOn ? onColor : offColor} 
+        : {background: isOn ? onColor : offColor}
     return (
         <>
           <input
