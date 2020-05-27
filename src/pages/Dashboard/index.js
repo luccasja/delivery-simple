@@ -25,6 +25,7 @@ const Dashboard = () =>{
     const [nome_cliente, setNomeCliente] = useState('')
     const [cpf, setCpf] = useState('')
     const [telefone, setTelefone] = useState('')
+    const [tipo_entrega, setTipoEntrega] = useState(0)
     const [endereco_entrega, setEnderecoEntrega] = useState('')
     const [numero_entrega, setNumeroEntrega] = useState('')
     const [bairro_entrega, setBairroEntrega] = useState('')
@@ -85,8 +86,8 @@ const Dashboard = () =>{
 
     const listBtnRefs = []
     const listBtnAlterar = []
-    //const serverURL = 'https://api.finamassa.online'
-    const serverURL = 'http://localhost:3000'
+    const serverURL = 'https://api.finamassa.online'
+    //const serverURL = 'http://localhost:3000'
 
     useEffect(()=>{
         const socket = socketIOClient(serverURL)
@@ -174,7 +175,17 @@ const Dashboard = () =>{
     }
 
     function BuscarPedido(pedido = 0){
-        if(pedido === 0){
+        if(pedido === undefined || pedido === ''){
+            
+            Api.get('pedido/data/'+GetFormattedDateIni()+'/'+GetFormattedDateFim()).then(response =>{
+                setPedidos(response.data)
+                setPedidoLoading(false)
+            }).catch(error=>{
+                console.log(error)
+                setPedidoLoading(false)
+                setShowModalConnection(true)
+                return
+            })
             return
         }
 
@@ -197,7 +208,17 @@ const Dashboard = () =>{
     }
 
     function BuscarPedidoPorData(data){
-        if(data === undefined){
+        if(data === undefined || data === ''){
+            
+            Api.get('pedido/data/'+GetFormattedDateIni()+'/'+GetFormattedDateFim()).then(response =>{
+                setPedidos(response.data)
+                setPedidoLoading(false)
+            }).catch(error=>{
+                console.log(error)
+                setPedidoLoading(false)
+                setShowModalConnection(true)
+                return
+            })
             return
         }
 
@@ -332,6 +353,7 @@ const Dashboard = () =>{
         }
         setNomeCliente(pedido.nome_cliente)
         setCpf(pedido.cpf)
+        setTipoEntrega(pedido.tipo_entrega)
         setTelefone(pedido.telefone)
         setEnderecoEntrega(pedido.endereco_entrega)
         setNumeroEntrega(pedido.numero_entrega)
@@ -525,7 +547,6 @@ const Dashboard = () =>{
     }
 
     function BuscarProdutoPorPK(id){
-        id = id.replace(' ','')
         if(id === '' || id === undefined){
             Api.get('produto/').then(response =>{
                 if(response.status === 200){
@@ -546,6 +567,7 @@ const Dashboard = () =>{
         Api.get('produto/'+id).then(response =>{
             if(response.status === 200){
                 if(response.data.length === 0){
+                    setProdutoLoading(false)
                     return
                 }else{
                     let result = []
@@ -658,7 +680,6 @@ const Dashboard = () =>{
             <Navbar style={{background:'#F43d'}}>
             <Navbar.Brand style={{color:'#FFF', textAlign:'center'}}>Fina Massa</Navbar.Brand>
             </Navbar>
-            
             <Row style={{width:'100%', margin:0}}>
                 <Col md='3' style={{background:'#FFF', textAlign:'center'}}>
                     <Row style={{marginTop:20, paddingBottom:20, borderBottomStyle:'solid', borderBottomWidth:0.5, borderBottomColor:'#e3e3e3'}}>
@@ -721,10 +742,10 @@ const Dashboard = () =>{
                             </Row>
                             <Row>
                                 <Col md='6' my-auto='true'>
-                                    <p><strong>Pedido</strong><input style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarPedido(e.target.valueAsNumber)} type="number" placeholder='99999'/></p>
+                                    <p><strong>Pedido</strong><InputMask mask='99999' maskChar={null} style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarPedido(e.target.value)} placeholder='99999'/></p>
                                 </Col>
                                 <Col md='6' my-auto='true'>
-                                    <p><strong>Data</strong><InputMask mask='99/99/9999' maskChar=' ' style={{fontWeight:'bold', marginLeft:10, width:170}} onChange={e => BuscarPedidoPorData(e.target.value)} placeholder='01/01/2020'/></p>
+                                    <p><strong>Data</strong><InputMask mask='99/99/9999' maskChar={null} style={{fontWeight:'bold', marginLeft:10, width:170}} onChange={e => BuscarPedidoPorData(e.target.value)} placeholder='01/01/2020'/></p>
                                 </Col>
                             </Row>
                             <Row>
@@ -740,7 +761,14 @@ const Dashboard = () =>{
                                             <Col onClick={()=>ModalShow(item)} md='8' style={{padding:10, paddingLeft:20, cursor:'pointer'}}>
                                                 <p><strong style={{color:'#F97A7A'}}>Pedido: {item.id}</strong> - <strong>{DataFormat(item.createdAt)}</strong></p>
                                                 <p>{item.nome_cliente} - {item.telefone}</p>
-                                                <p>{item.endereco_entrega}, {item.numero_entrega}, {item.bairro_entrega}, {item.complemento_entrega}</p>
+                                                {
+                                                    item.tipo_entrega === 2
+                                                    ? <p>Retirada em Loja</p>
+                                                    : <>
+                                                        <p>{item.endereco_entrega}, {item.numero_entrega}, {item.bairro_entrega}</p>
+                                                        <p><strong>Referência: </strong>{item.complemento_entrega}</p>
+                                                    </> 
+                                                }
                                                 <p>Quantidade de Itens: <strong>{item.qntd_item}</strong></p>
                                                 {!item.recebido && <span style={{fontSize:13, height:30, background:'#199cff', color:'#FFF', padding:3, paddingLeft:10, paddingRight:10, borderRadius:3}}>Novo</span>}
                                             </Col>
@@ -777,7 +805,7 @@ const Dashboard = () =>{
                             </Row>
                             <Row style={{margin:0, padding:0}}>
                                 <Col md='3' my-auto='true'>
-                                    <p><strong>ID</strong><input type='number' style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarProdutoPorPK(e.target.value)} maxLength={5} placeholder='99999'/></p>
+                                    <p><strong>ID</strong><InputMask mask='99999' maskChar={null} style={{fontWeight:'bold', marginLeft:10,  width:100}} onChange={e => BuscarProdutoPorPK(e.target.value)} placeholder='99999'/></p>
                                 </Col>
                                 <Col md='6' my-auto='true'>
                                     <p><strong>Nome</strong><input style={{fontWeight:'bold', marginLeft:10}} onChange={e => BuscarProdutoPorNome(e.target.value)} maxLength="100" placeholder='Pastel...'/></p>
@@ -802,7 +830,7 @@ const Dashboard = () =>{
                                         </Col>
                                         <Col xs='5' my-auto="true" style={{textAlign:'start', padding:0, margin:0}}>
                                             <p><strong style={{color:'#F97A7A'}}>ID: {produto.id}</strong><strong> - {produto.nome}</strong></p>
-                                            <p style={{fontSize:13}}>{LimitarString(produto.descricao, 60)}</p>
+                                            <p style={{fontSize:13}}>{produto.descricao}</p>
                                             {!produto.ativo && <span style={{fontSize:13, height:30, background:'#F43d', color:'#FFF', padding:3, borderRadius:3, paddingLeft:10, paddingRight:10}}>Inativo</span>}
                                         </Col>
                                         <Col xs='2' my-auto="true" style={{padding:0, margin:0}}>
@@ -839,9 +867,17 @@ const Dashboard = () =>{
                             <p><strong>CPF: </strong>{cpf}</p>
                         }
                         <p><strong>{telefone}</strong></p>
-                        <p>Endereço:</p>
-                        <p>{endereco_entrega}, {numero_entrega} {complemento_entrega}</p>
-                        <p>{bairro_entrega}</p>
+                        {
+                            tipo_entrega === 2
+                            ? <p>Retirada em Loja</p>
+                            : <>
+                                <p><strong>Endereço:</strong></p>
+                                <p>{endereco_entrega}, {numero_entrega}</p>
+                                <p>{bairro_entrega}</p>
+                                <p><strong>Referência:</strong></p>
+                                <p>{complemento_entrega}</p>
+                            </> 
+                        }
                         <div style={{width:'30%', height:0.5, background:'#E3E3E3', marginTop:10}}/>
                         <div style={{marginTop:20, marginBottom:10}}>
                         {
@@ -988,18 +1024,27 @@ const Dashboard = () =>{
                         <p style={{fontSize:18, color:'#000'}}><strong>CPF: </strong>{cpf}</p>
                     }
                     <p style={{fontSize:18, color:'#000'}}><strong>Telefone: </strong>{telefone}</p>
-                    <p style={{fontSize:18, color:'#000'}}><strong>Endereço: </strong>{endereco_entrega}, {numero_entrega}</p>
-                    <p style={{fontSize:18, color:'#000'}}><strong>Bairro: </strong>{bairro_entrega}</p>
-                    <p style={{fontSize:18, color:'#000'}}><strong>Referência: </strong>{complemento_entrega}</p>
+                    {
+                        tipo_entrega === 2
+                        ? <p style={{fontSize:18, color:'#000'}}><strong>Retirada em Loja</strong></p>
+                        : <>
+                            <p style={{fontSize:18, color:'#000'}}><strong>Endereço: </strong>{endereco_entrega}, {numero_entrega}</p>
+                            <p style={{fontSize:18, color:'#000'}}><strong>Bairro: </strong>{bairro_entrega}</p>
+                            <p style={{fontSize:18, color:'#000', width:435}}><strong>Referência: </strong>{complemento_entrega}</p>
+                        </> 
+                    }
+                    
                     <p style={{color:'#000', textAlign:'center', width:435}}>
                         <strong>--------</strong>
                     </p>
                     <div style={{width:435, textAlign:'center'}}>
                         <Row style={{margin:0, padding:0}}>
+                            {/*
                             <Col xs='1' style={{margin:0, padding:0}}>
                                 Cod.
                             </Col>
-                            <Col xs='5' style={{margin:0, padding:0}}>
+                            */}
+                            <Col xs='6' style={{margin:0, padding:0, textAlign:'start'}}>
                                 Produto
                             </Col>
                             <Col xs='2' style={{margin:0, padding:0}}>
@@ -1018,10 +1063,12 @@ const Dashboard = () =>{
                         itensPedido.map(item=>(
                             <div key={item.id}>
                                 <Row style={{margin:0, padding:0}}>
-                                    <Col xs='1' style={{margin:0, padding:0}}>
-                                    {item.produto.id}
+                                    {/**
+                                     <Col xs='1' style={{margin:0, padding:0}}>
+                                        {item.produto.id}
                                     </Col>
-                                    <Col xs='5' style={{margin:0, padding:0}}>
+                                     */}
+                                    <Col xs='6' style={{margin:0, padding:0, textAlign:'start'}}>
                                     {item.produto.nome}
                                     </Col>
                                     <Col xs='2' style={{margin:0, padding:0}}>

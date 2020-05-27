@@ -217,7 +217,7 @@ export default function Pedido (){
                                                     </Col>
                                                     <Col xs='6' my-auto="true" style={{textAlign:'start', padding:0, margin:0}}>
                                                         <p><strong>{item.nome}</strong></p>
-                                                        <p style={{fontSize:13}}>{LimitarString(item.descricao, 30)}</p>
+                                                        <p style={{fontSize:13}}>{item.descricao}</p>
                                                     </Col>
                                                     <Col xs='3' my-auto="true" style={{padding:0, margin:0}}>
                                                         <p style={{fontSize:20}}><strong>{Moeda(item.valor_unitario)}</strong></p>
@@ -262,7 +262,7 @@ export default function Pedido (){
                     <Row style={{justifyContent:'center', alignItems:'center'}}>
                         <p><strong>{nome}</strong></p>
                     </Row>
-                    <Row style={{justifyContent:'center', alignItems:'center'}}>
+                    <Row style={{justifyContent:'center', alignItems:'center', paddingLeft:17, paddingRight:17}}>
                         <p>{descricao}</p>
                     </Row>
                     <Row style={{justifyContent:'center', alignItems:'center', marginTop:15, marginBottom:15}}>

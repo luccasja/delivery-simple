@@ -19,7 +19,8 @@ export default function Finalizar(){
     const [btnEnviarPedidoDisabled, setBtnEnviarPedidoDisabled] = useState(false)
     const [nome_cliente, setNomeCliente] = useState('')
     const [cpf, setCpf] = useState('')
-    const [telefone, setTelefone]= useState('')
+    const [telefone, setTelefone] = useState('')
+    const [tipo_entrega, setTipoEntrega]= useState(2)
     const [endereco_entrega, setEnderecoEntrega] = useState('')
     const [numero_entrega, setNumeroEntrega] = useState('')
     const [bairro_entrega, setBairroEntrega] = useState('')
@@ -36,6 +37,7 @@ export default function Finalizar(){
     const [btnEnviarTxt, setBtnEnviarTxt] = useState('Enviar Pedido')
     const [inputBairroVisible, setInputBairroVisible] = useState(false)
     const [trocoVisible, setTrocoVisible] = useState(true)
+    const [enderecoVisible, setEnderecoVisible] = useState(false)
     const [showModalConnection, setShowModalConnection] = useState(false)
 
     const [busy, setBusy] = useState(false)
@@ -44,6 +46,7 @@ export default function Finalizar(){
     const nomeClienteRef = useRef()
     const cpfRef= useRef()
     const telefoneRef = useRef()
+    const tipoEntregaRef = useRef()
     const ruaEntregaRef = useRef()
     const numeroEntregaRef = useRef()
     const bairroSelecaoRef = useRef()
@@ -57,8 +60,8 @@ export default function Finalizar(){
     let totalItemRefs = []
     let nomeProdutoRefs = []
 
-    //const serverURL = 'https://api.finamassa.online'
-    const serverURL = 'http://localhost:3000'
+    const serverURL = 'https://api.finamassa.online'
+    //const serverURL = 'http://localhost:3000'
     
     
     useEffect(()=>{
@@ -129,7 +132,6 @@ export default function Finalizar(){
         setConfirmShow(false)
     }
 
-
     function CalcularItem(idx, lista){
         return Moeda(lista[idx].quantidade*lista[idx].valor_unitario)
     }
@@ -163,7 +165,6 @@ export default function Finalizar(){
 
         return total
     }
-
 
     function SomarQntPecas(lista){
         let list = lista
@@ -243,6 +244,23 @@ export default function Finalizar(){
         }
     }
 
+    function OptionChargeTipEntrega(value){
+        if(value !== 'Receber em Domicílio'){
+            setEnderecoVisible(false)
+            setEnderecoEntrega('')
+            setNumeroEntrega('')
+            setBairroEntrega('')
+            setComplementoEntrega('')
+            setFrete(0)
+            setTipoEntrega(2)
+            return
+        }else{
+            setTipoEntrega(1)
+            setEnderecoVisible(true)
+            OptionsChargeBairro(bairroSelecaoRef.current.value)
+        }
+    }
+
     function ValidarCPF(strCPF){
         if(strCPF === '' || strCPF === undefined){
             return false
@@ -269,7 +287,6 @@ export default function Finalizar(){
         if (Resto != parseInt(strCPF.substring(10, 11) ) ) return false;
         setCpf(strCPF)
         return true;
-
     }
 
     function EnviarPedido(){
@@ -301,35 +318,43 @@ export default function Finalizar(){
             telefoneRef.current.getInputDOMNode().focus()
             return
         }
-        if(ruaEntregaRef.current.value === "" || ruaEntregaRef.current.value.length < 3){
-            alert('Campo rua obrigatorio')
-            ruaEntregaRef.current.focus()
+
+        if(tipoEntregaRef.current.value === 'Selecione um tipo de entrega'){
+            alert('Informe um tipo de entrega')
+            tipoEntregaRef.current.focus()
             return
         }
-        if(numeroEntregaRef.current.value === ""){
-            alert('Campo numero obrigatorio')
-            numeroEntregaRef.current.focus()
-            return
-        }
-        if(bairroSelecaoRef.current.value === "Selecione seu bairro"){
-            alert('Selecione seu bairro')
-            bairroSelecaoRef.current.focus()
-            return
-        }
-        if(bairroSelecaoRef.current.value === "Outros"){
-            if(bairroRef.current.value === ''){
-                alert('Informe seu bairro')
-                bairroRef.current.focus()
+
+        if(tipoEntregaRef.current.value === 'Entrega em Domicício'){
+            if(ruaEntregaRef.current.value === "" || ruaEntregaRef.current.value.length < 3){
+                alert('Campo rua obrigatorio')
+                ruaEntregaRef.current.focus()
+                return
+            }
+            if(numeroEntregaRef.current.value === ""){
+                alert('Campo numero obrigatorio')
+                numeroEntregaRef.current.focus()
+                return
+            }
+            if(bairroSelecaoRef.current.value === "Selecione seu bairro"){
+                alert('Selecione seu bairro')
+                bairroSelecaoRef.current.focus()
+                return
+            }
+            if(bairroSelecaoRef.current.value === "Outros"){
+                if(bairroRef.current.value === ''){
+                    alert('Informe seu bairro')
+                    bairroRef.current.focus()
+                    return
+                }
+            }
+
+            if(complemento_entregaRef.current.value === "" || complemento_entregaRef.current.value.length < 4){
+                alert('Campo Referencia obrigatorio')
+                complemento_entregaRef.current.focus()
                 return
             }
         }
-
-        if(complemento_entregaRef.current.value === "" || complemento_entregaRef.current.value.length < 4){
-            alert('Campo Referencia obrigatorio')
-            complemento_entregaRef.current.focus()
-            return
-        }
-
         if(frmPagamentoRef.current.textContent === ""){
             alert('Selecione uma forma de pagamento')
             frmPagamentoRef.current.focus()
@@ -355,6 +380,7 @@ export default function Finalizar(){
             nome_cliente,
             cpf,
             telefone,
+            tipo_entrega,
             endereco_entrega,
             numero_entrega,
             bairro_entrega,
@@ -420,7 +446,7 @@ export default function Finalizar(){
                                         </Col>
                                         <Col xs='6' my-auto="true" style={{textAlign:'start'}}>
                                             <p><strong ref={ref =>{nomeProdutoRefs[idx] = ref}}>{item.nome}</strong></p>
-                                            <p style={{fontSize:13}}>{LimitarString(item.descricao, 30)}</p>
+                                            <p style={{fontSize:13}}>{item.descricao}</p>
                                             <p><strong>{Moeda(item.valor_unitario)}</strong></p>
                                             {item.observacoes !== '' 
                                                 ? <p style={{fontSize:13}}><strong>Observações: </strong>{LimitarString(item.observacoes, 30)}</p>
@@ -494,7 +520,7 @@ export default function Finalizar(){
                                 (valor_total > 50) &&
                                 <div>
                                     <p><strong>CPF</strong></p>
-                                    <InputMask mask="999.999.999-99" maskChar=' ' placeholder="000.000.000-00" ref={cpfRef} value={cpf} disabled={disabledForm} onChange={e => setCpf(e.target.value)} style={{width:'100%'}}/>
+                                    <InputMask mask="999.999.999-99" maskChar={null} placeholder="000.000.000-00" ref={cpfRef} value={cpf} disabled={disabledForm} onChange={e => setCpf(e.target.value)} style={{width:'100%'}}/>
                                 </div>  
                             }
                             
@@ -503,10 +529,20 @@ export default function Finalizar(){
                     <Row style={{marginBottom:30}}>
                         <Col>
                             <p><strong>Telefone</strong></p>
-                            <InputMask mask='(99) 99999-9999' maskChar=' ' ref={telefoneRef}  value={telefone} disabled={disabledForm} onChange={e => setTelefone(e.target.value)} placeholder='(75) 99999-9999' style={{width:'100%'}}/>
+                            <InputMask mask='(99) 99999-9999' maskChar={null} ref={telefoneRef}  value={telefone} disabled={disabledForm} onChange={e => setTelefone(e.target.value)} placeholder='(75) 99999-9999' style={{width:'100%'}}/>
                         </Col>
                     </Row>
-                    <Row style={{marginBottom:20}}>
+                    <Row style={{marginBottom:30}}>
+                        <Col>
+                            <p><strong>Tipo de Entrega</strong></p>
+                            <select ref={tipoEntregaRef} style={{width:'100%'}} disabled={disabledForm} onChange={e => OptionChargeTipEntrega(e.target.value)}>
+                                <option>Selecione um tipo de entrega</option>
+                                <option>Retirar em Loja</option>
+                                <option>Receber em Domicílio</option>
+                            </select>
+                        </Col>
+                    </Row>
+                    <Row hidden={!enderecoVisible} style={{marginBottom:20}}>
                         <Col>
                             <p><strong>Endereço</strong></p>
                             
@@ -551,7 +587,7 @@ export default function Finalizar(){
                     <Row hidden={!concluido}>
                         <Container style={{padding:10, textAlign:'center', borderRadius:8}}>
                             <p style={{color:'#86E3CE'}}><strong>{nome_cliente},</strong></p>
-                            <p style={{color:'#86E3CE'}}>Muito obrigado pela sua preferencia! ;)</p>
+                            <p style={{color:'#86E3CE'}}>Muito obrigado pela sua preferência! ;)</p>
                             <p style={{color:'#86E3CE'}}>Pedido: <strong>{numero_pedido}</strong></p>
                         </Container>
                     </Row>
