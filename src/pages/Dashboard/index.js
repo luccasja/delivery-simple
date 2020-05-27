@@ -86,8 +86,8 @@ const Dashboard = () =>{
 
     const listBtnRefs = []
     const listBtnAlterar = []
-    const serverURL = 'https://api.finamassa.online'
-    //const serverURL = 'http://localhost:3000'
+    //const serverURL = 'https://api.finamassa.online'
+    const serverURL = 'http://localhost:3000'
 
     useEffect(()=>{
         const socket = socketIOClient(serverURL)
@@ -99,7 +99,8 @@ const Dashboard = () =>{
 
         let islogged = localStorage.getItem('@delivery/islogged')
         if(islogged === 'false'){
-            history.replace('/')
+            history.replace('/login')
+            return
         }
         
         Api.get('pedido/data/'+GetFormattedDateIni()+'/'+GetFormattedDateFim()).then(response =>{
@@ -661,12 +662,9 @@ const Dashboard = () =>{
     function LogOff(){
         Api.delete('session').then(response=>{
             if(response.status === 200){
-                if(response.data){
-                    localStorage.setItem('@delivery/islogged', 'false')
-                    history.replace('/')
-                    return
-                }
-                alert('Falha ao tentar sair do sistema, tente novamente')
+                localStorage.setItem('@delivery/islogged', 'false')
+                history.replace('/')
+                return
             }
         }).catch(error=>{
             console.log(error)
