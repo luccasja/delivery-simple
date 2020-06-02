@@ -60,8 +60,8 @@ export default function Finalizar(){
     let totalItemRefs = []
     let nomeProdutoRefs = []
 
-    //const serverURL = 'https://api.finamassa.online'
-    const serverURL = 'http://localhost:3000'
+    const serverURL = 'https://api.finamassa.online'
+    //const serverURL = 'http://192.168.0.120:3000'
     
     
     useEffect(()=>{
@@ -289,6 +289,12 @@ export default function Finalizar(){
         return true;
     }
 
+    function ValidarTelefone(telefone){
+        let expressao = /\([1-9]{1}[1-9]{1}\)\s[9]{1}\d{4}\-\d{4}/g
+        let regex = new RegExp(expressao)
+        return regex.test(telefone)
+    }
+
     function EnviarPedido(){
         if(busy){
             return
@@ -319,13 +325,20 @@ export default function Finalizar(){
             return
         }
 
+        if(!ValidarTelefone(telefoneRef.current.value)){
+            alert('Informe um numero de celular valido')
+            telefoneRef.current.getInputDOMNode().focus()
+            return
+        }
+
         if(tipoEntregaRef.current.value === 'Selecione um tipo de entrega'){
             alert('Informe um tipo de entrega')
             tipoEntregaRef.current.focus()
             return
         }
 
-        if(tipoEntregaRef.current.value === 'Entrega em Domicício'){
+        
+        if(enderecoVisible){
             if(ruaEntregaRef.current.value === "" || ruaEntregaRef.current.value.length < 3){
                 alert('Campo rua obrigatorio')
                 ruaEntregaRef.current.focus()
