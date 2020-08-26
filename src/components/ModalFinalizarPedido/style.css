@@ -1,0 +1,39 @@
+.header-modal-finalizar-pedido{
+    justify-content: center; 
+    align-items: center; 
+    width: 100%;
+}
+
+.body-modal-finalizar-pedido{
+    padding: 30px;
+}
+
+.size-input-finalizar-pedido{
+    width: 100%;
+}
+
+.footer-modal-finalizar-pedido{
+    justify-content: center; 
+    align-items: center; 
+    flex-direction: column;
+}
+
+.totais-modal-finalizar-ped{
+    text-align: center;
+}
+
+.agradecimentos-modal-finalizar-pedido{
+    padding: 10px; 
+    text-align: center; 
+    border-radius: 8px;
+}
+
+.btn-enviar-pedido-modal-finalizar{
+    width:200px
+}
+
+.load-enviar-pedido-modal-finalizar{
+    height:20px; 
+    width:20px; 
+    margin-right:10px
+}

@@ -1,0 +1,12 @@
+.img-header-custom-component{
+    height:50px; 
+    width:50px;
+    object-fit: cover;
+}
+.separator-header-custom-component{
+    width: 100%; 
+    height:0.5px; 
+    background:rgb(243, 180, 66); 
+    margin-top:10px; 
+    margin-bottom:0px;
+}

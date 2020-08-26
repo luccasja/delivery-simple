@@ -1,7 +1,7 @@
 import React from 'react';
 import './Switch.css';
 
-const Switch = ({handleToggle, onColor='#06D6A0', offColor='grey', btnSize, lableHeight, isOn, id = 'new'}) => {
+const Switch = ({disabled, handleToggle, onColor='#06D6A0', offColor='grey', btnSize, lableHeight, isOn, id = 'new'}) => {
     /*Exemplo de utilização: 
     <Switch btnSize={26} 
         lableHeight={30} 
@@ -17,22 +17,23 @@ const Switch = ({handleToggle, onColor='#06D6A0', offColor='grey', btnSize, labl
         : {background: isOn ? onColor : offColor}
     return (
         <>
-          <input
+        <input
             checked={isOn}
             onChange={handleToggle}
             className="react-switch-checkbox"
             id={id}
+            disabled={disabled}
             type="checkbox"
-          />
-          <label
+        />
+        <label
             style={lableStyle}
             className="react-switch-label"
             htmlFor={id}
-          >
+        >
             <span className={`react-switch-button`} style={btnStyle} />
-          </label>
+        </label>
         </>
-      );
+    );
 };
 
 export default Switch;

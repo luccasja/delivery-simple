@@ -1,0 +1,18 @@
+.body-modal-confirm-cmp{
+    text-align: center;
+}
+
+.footer-modal-confirm-cmp{
+    justify-content: center; 
+    align-items: center;
+}
+
+.btn-negacao-modal-confirm{
+    width:100px
+}
+
+.btn-confirmacao-modal-confirm{
+    background: #F97A7A; 
+    width:100px; 
+    border-color: #FFF;
+}
