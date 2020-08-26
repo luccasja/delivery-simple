@@ -1,17 +1,23 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no" />
-    <title>Fina Massa</title>
-  </head>
-  <body>
-    <script>
-      if(location.protocol !== 'https:'){
-        const httpsURL = 'https://'+location.href.split('//')[1]
-        //location.replace(httpsURL)
-      }
-    </script>
-    <div id="root"></div>
-  </body>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no" />
+		<title id="titulo_empresa"></title>
+		<link id="link_icon_header" rel="icon">
+	</head>
+	<body>
+		<script>
+			let img_name = location.origin.split('//')[1]
+			.replace(':','-')
+			.replace('.','-')+".png"
+
+			document.getElementById('link_icon_header')
+			.href = window.location.origin+"/img/"+img_name
+			 
+			document.getElementById('titulo_empresa')
+			.append(img_name.split('-')[0])
+		</script>
+		<div id="root"></div>
+	</body>
 </html>
