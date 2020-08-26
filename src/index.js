@@ -7,4 +7,4 @@ import './global.css'
 import Routes from './routes';
 
 
-ReactDOM.render(<Routes/>,document.getElementById('root'));
+ReactDOM.render(<Routes/>, document.getElementById('root'));

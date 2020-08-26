@@ -1,27 +1,99 @@
 import React, {useEffect, useState} from 'react'
-import Logo from '../../img/Logo.jpeg'
 import {useHistory} from 'react-router-dom'
-import { Button, Container, Row, Col, Image} from 'react-bootstrap';
+import {Container, Row, Col, Image} from 'react-bootstrap';
+import {parseQueryString} from '../../controllers/Tools'
 import Api from '../../services/api'
 import BtnLogin from '../../components/BtnLogin'
+import ButtonCustom from '../../components/ButtonCustom'
+import Config from '../../config/global'
+import './style.css'
 
 const Home = () => {
     const history = useHistory()
     const [btnNovoPedidoVisible, setBtnNovoPedidoVisible] = useState(false)
+    const [btnFaleConoscoVisible, setBtnFaleConoscoVisible] = useState(false)
+    const [nomeEmpresa, setNomeEmpresa] = useState("")
+    const [msgSaudacao, setMsgSaudacao] = useState("")
+    const [numeroContato, setNumeroContato] = useState("")
+    const [msgLjFechada, setMsgLjFechada] = useState("")
+    const [srcLogo, setSrcLogo] = useState(window.location.origin+"/img/img_indisponivel.png")
 
     useEffect(()=>{
+        console.log(window.location.search)
+        var params = parseQueryString();
+        let pagina = params["r"]
+
+        switch (pagina){
+            case "pedido":
+                history.replace('/pedido')
+                break
+            case "pb":
+                history.replace('/pb/'+params["v"])
+                break
+            case "login":
+                history.replace('/login')
+                break
+            case "finalizar":
+                history.replace("/finalizar")
+                break
+            case "dashboard":
+                history.replace("/dashboard")
+                break
+        }
+
+        Api.get("licenciada").then(response =>{
+            if(response.status === 200){
+                setNomeEmpresa(response.data[0].nome_fantasia)
+
+                if(response.data[0].logo.length > 0){
+                    setSrcLogo(Config.repositorioImg+response.data[0].logo)
+                }else{
+                    setSrcLogo(window.location.origin+"/img/img_indisponivel.png")
+                }
+
+                setMsgSaudacao(response.data[0].msg_saudacao)
+                setMsgLjFechada(response.data[0].msg_loja_fechada)
+                setNumeroContato(response.data[0].contato)
+            }
+        }).catch(error=>{
+            console.log(error)
+            return
+        })
+
         Api.get('session').then(response=>{
             if(response.status === 200){
                 if(response.data){
                     setBtnNovoPedidoVisible(true)
                 }
             }
+        }).catch(error=>{
+            console.log(error)
+            return
+        })
+
+        Api.get("parametro").then(response =>{
+            if(response.status === 200){
+                response.data.forEach(param => {
+                    switch(param.nome) {
+                        case "INTEGRA_WHATSAPP":
+                            setBtnFaleConoscoVisible(param.valor === "1" ? true : false)
+                            break
+                    }
+                })
+            }
+        }).catch(error=>{
+            console.log(error)
+            return
         })
     },[])
 
 
     function handleNovoPedido(){
         history.push('/pedido')
+    }
+
+    function FaleConosco(){
+        window.open(`https://wa.me/55${numeroContato}`)
     }
     
     return(
@@ -33,73 +105,60 @@ const Home = () => {
                 <Col/>
                 <Col 
                     md='8' 
-                    style={{
-                        background:'#FFF', 
-                        padding:40, 
-                        paddingTop:15, 
-                        borderRadius:8
-                    }}>
+                    className="container-central-pghome">
                     <Row>
                         <BtnLogin />
                     </Row>
                     <Image 
-                        src={Logo} 
-                        style={{
-                            height:150, 
-                            marginBottom:20, 
-                            width:150
-                        }} 
-                        alt='logo' 
+                        src={srcLogo}
+                        roundedCircle 
+                        className="img-logo-pghome"
+                        alt="logo" 
                     />
                     <Row 
                         hidden={!btnNovoPedidoVisible} 
-                        style={{
-                            textAlign:'center', 
-                            background:'#FCFCFC', 
-                            padding:20, 
-                            marginBottom:40, 
-                            borderRadius:8, 
-                            borderStyle:'solid', 
-                            borderWidth:0.5, 
-                            borderColor:'#e3e3e3'
-                        }}>
+                        className='container-saudacao-pghome'>
                         <Col>
-                            <p className='saudacao-txt' style={{marginBottom:15, fontSize:20}}>Olá, seja bem-vindo(a) ao <strong>Fina Massa</strong></p>
-                            <p>Sinta-se a vontade e faça o seu pedido!</p>
+                            <p className="titulo-saudacao-pghome">
+                                Olá, seja bem-vindo(a) ao <br/><strong>{nomeEmpresa}</strong>
+                            </p>
+                            <p>{msgSaudacao}</p>
                         </Col>
                     </Row>
                     <Row 
                         hidden={btnNovoPedidoVisible} 
-                        style={{
-                            textAlign:'center', 
-                            background:'#FCFCFC', 
-                            padding:20, 
-                            marginBottom:40, 
-                            borderRadius:8, 
-                            borderStyle:'solid', 
-                            borderWidth:0.5, 
-                            borderColor:'#e3e3e3'
-                        }}>
+                        className='container-saudacao-pghome'>
                         <Col>
-                            <p className='saudacao-txt' style={{marginBottom:15, fontSize:20}}>Olá, seja bem-vindo(a) ao <strong>Fina Massa</strong></p>
-                            <p style={{fontSize:20}} ><strong>Horário de Funcionamento</strong></p>
-                            <p>Segunda a Quinta das 16:00 às 20:00</p>
-                            <p>Sexta, Domingo e Feriados das 16:00 às 22:00</p>
+                            <p className="titulo-saudacao-pghome">
+                                Olá, seja bem-vindo(a) ao <br/><strong>{nomeEmpresa}</strong>
+                            </p>
+                            <p>{msgLjFechada}</p>
                         </Col>
                     </Row>
-                    <Button 
-                        hidden={!btnNovoPedidoVisible} 
-                        style={{
-                            background:'#FF414D', 
-                            border:0, 
-                            width:250, 
-                            height:50, 
-                            borderRadius:8 
-                        }} 
-                        onClick={handleNovoPedido}
-                        >
-                        Novo Pedido
-                    </Button>
+                    <Row style={{justifyContent:'center', padding:10}}>
+                        <ButtonCustom
+                            variant="info" 
+                            onClick={handleNovoPedido} 
+                            title="Novo Pedido" 
+                            hidden={!btnNovoPedidoVisible}
+                            width="50%" 
+                        />
+                    </Row>
+                    {/*<Row style={{justifyContent:'center', padding:10}}>
+                        <ButtonCustom
+                            variant="info" 
+                            title="Cadastro" 
+                            width="50%" 
+                        />
+                    </Row>*/}
+                    {btnFaleConoscoVisible && <Row style={{justifyContent:'center', padding:10}}>
+                        <ButtonCustom
+                            variant="success" 
+                            onClick={FaleConosco} 
+                            title="Fale Conosco!"
+                            width="50%" 
+                        />
+                    </Row>}
                 </Col>
                 <Col/>
             </Row>

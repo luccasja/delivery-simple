@@ -1,9 +1,9 @@
 import axios from 'axios';
+import Config from '../config/global'
 
 const api = axios.create({
-    //baseURL:'https://api.finamassa.online/ZmluYW1hc3Nh',
-    baseURL:'http://192.168.0.121:3000/ZmluYW1hc3Nh',
-    timeout: 20000
+    baseURL: Config.api+'ZmluYW1hc3Nh',
+    timeout: 30000
 });
 
 export default api;
