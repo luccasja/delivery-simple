@@ -1,5 +1,5 @@
 module.exports = {
-    api: 'https://api.luccasalmeida.com/',
-    socketIo: 'https://api.luccasalmeida.com/',
-    repositorioImg: 'https://api.luccasalmeida.com/public/img/'
+    api: 'http://192.168.0.121:3000/',
+    socketIo: 'http://192.168.0.121:3000/',
+    repositorioImg: 'http://192.168.0.121:3000/public/img/'
 }

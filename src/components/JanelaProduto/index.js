@@ -18,7 +18,8 @@ function JanelaProduto({hidden}) {
     const [prd_valor_unitario, setPrdValorUnitario] = useState(0)
     const [prd_situacao, setPrdSituacao] = useState(0)
     const [prd_situacaoDisable, setPrdSituacaoDisable] = useState(true)
-    const [prdFracionado, setPrdFracionado] = useState(0)
+    const [prd_fracionado, setPrdFracionado] = useState(0)
+    const [prd_id_categoria, setPrdIdCategoria] = useState(0)
     const [idProdutoSelecionado, setIdProdutoSelecionado] = useState(0)
     const [nomeProdutoSelecionado, setNomeProdutoSelecionado] = useState('')
     const [idVisible, setIdVisible] = useState(false)
@@ -28,12 +29,14 @@ function JanelaProduto({hidden}) {
     const [produtoLoading, setProdutoLoading] = useState(true)
     const [srcImgNovoProduto, setSrcImgNovoProduto] = useState(window.location.origin+"/img/img_indisponivel.png")
     const [imgFile, setImgFile] = useState(undefined)
+    const [categorias, setCategorias] = useState([])
     const nomePrdRef = useRef()
     const descricaoPrdRef = useRef()
     const dirImgPrdRef = useRef()
     const valorUnitarioPrdRef = useRef()
     const situacaoPrdRef = useRef()
     const fracionadoPrdRef = useRef()
+    const categoriaPrdRef = useRef()
     const btnNovoProduto = useRef()
     const listBtnAlterar = []
 
@@ -49,6 +52,16 @@ function JanelaProduto({hidden}) {
         }).catch(error=>{
             console.log(error)
             setProdutoLoading(false)
+            setShowModalConnection(true)
+            return
+        })
+
+        Api.get('categoria').then(response=>{
+            if(response.status === 200){
+                setCategorias(response.data)
+            }
+        }).catch(error =>{
+            console.log(error)
             setShowModalConnection(true)
             return
         })
@@ -72,14 +85,21 @@ function JanelaProduto({hidden}) {
             valorUnitarioPrdRef.current.focus()
             return 
         }
-        console.log(prdFracionado)
+
+        if(prd_id_categoria === 0){
+            alert('Campo categoria obrigatorio')
+            categoriaPrdRef.current.focus()
+            return
+        }
+
         const produto = {
             nome: prd_titulo,
             descricao: prd_descricao,
             dir_img: prd_img_dir,
             valor_unitario: prd_valor_unitario,
             ativo: prd_situacao,
-            fracionado: prdFracionado
+            fracionado: prd_fracionado,
+            id_categoria: prd_id_categoria
         }
 
         const formData = new FormData()
@@ -97,6 +117,7 @@ function JanelaProduto({hidden}) {
                     setPrdImgDir('')
                     setPrdValorUnitario(0)
                     setPrdFracionado(0)
+                    setPrdIdCategoria(0)
                     setLoadding(false)
                     setShowModalCadPrd(false)
                     setPrdAtualizado(idProdutoSelecionado)
@@ -122,6 +143,7 @@ function JanelaProduto({hidden}) {
                     setPrdImgDir('')
                     setPrdValorUnitario(0)
                     setPrdFracionado(0)
+                    setPrdIdCategoria(0)
                     Api.post('upload/'+response.data.Ok.id, formData).then(response =>{
                         if(response.status === 200){
                             alert('Produto cadastrado com sucesso!')
@@ -169,7 +191,7 @@ function JanelaProduto({hidden}) {
         setConfirmShow(true)
     }
 
-    function EditarShow(id, nome, descricao, valorUnitario, ativo, dir_img, fracionado, idx){
+    function EditarShow(id, nome, descricao, valorUnitario, ativo, dir_img, fracionado, idCategoria, idx){
         setTituloModalCadPrd('Alterar Cadastro de Produto')
         setLoadding(false)
         setIdProdutoSelecionado(id)
@@ -178,6 +200,7 @@ function JanelaProduto({hidden}) {
         setPrdValorUnitario(valorUnitario)
         setPrdSituacao(ativo)
         setPrdFracionado(fracionado)
+        setPrdIdCategoria(idCategoria)
         setPrdSituacaoDisable(false)
         setIdVisible(true)
         setShowModalCadPrd(true)
@@ -200,6 +223,7 @@ function JanelaProduto({hidden}) {
         setPrdSituacao(1)
         setPrdSituacaoDisable(true)
         setPrdFracionado(0)
+        setPrdIdCategoria(0)
         setIdVisible(false)
         setShowModalCadPrd(true)
         setSrcImgNovoProduto(window.location.origin+"/img/img_indisponivel.png")
@@ -416,7 +440,7 @@ function JanelaProduto({hidden}) {
                                             variant="info"
                                             title="Alterar"
                                             width={100}
-                                            onClick={()=>EditarShow(produto.id, produto.nome, produto.descricao, produto.valor_unitario, produto.ativo, produto.dir_img, produto.fracionado, idx)}
+                                            onClick={()=>EditarShow(produto.id, produto.nome, produto.descricao, produto.valor_unitario, produto.ativo, produto.dir_img, produto.fracionado, produto.id_categoria, idx)}
                                         />
                                         
                                     </Row>
@@ -492,10 +516,23 @@ function JanelaProduto({hidden}) {
                         </select>
                     </Col>
                 </Row>
-                <Row>
-                    <Col xs='6' style={{marginLeft:15}}>
+                <Row style={{margin:0, padding:0, justifyContent:'center', alignItems:'center'}}>
+                    <Col xs='6'>
+                        <p><strong>Categoria</strong></p>
+                        <select value={prd_id_categoria} ref={categoriaPrdRef} onChange={e=> setPrdIdCategoria(e.target.value)} style={{width:'100%'}}>
+                            <option value={0}></option>
+                            {
+                                categorias.map(categoria =>{
+                                    return (
+                                        categoria.ativo === 1 && <option key={categoria.id} value={categoria.id}>{categoria.descricao}</option>
+                                    )
+                                })
+                            }
+                        </select>
+                    </Col>
+                    <Col xs='6'>
                         <p><strong>Fracionado</strong></p>
-                        <select value={prdFracionado} ref={fracionadoPrdRef} onChange={e=> setPrdFracionado(e.target.value)} style={{width:'100%'}}>
+                        <select value={prd_fracionado} ref={fracionadoPrdRef} onChange={e=> setPrdFracionado(e.target.value)} style={{width:'100%'}}>
                             <option value={1}>Sim</option>
                             <option value={0}>Não</option>
                         </select>
