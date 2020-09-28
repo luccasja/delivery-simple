@@ -1,5 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react'
 import ReactToPrint from "react-to-print"
+import {useToasts} from 'react-toast-notifications'
 import InputMask from 'react-input-mask'
 import Api from '../../services/api'
 import socketIOClient from 'socket.io-client'
@@ -23,6 +24,7 @@ import './style.css';
 import ButtonCustom from '../ButtonCustom'
 
 function JanelaPedido({hidden}) {
+    const {addToast, removeToast} = useToasts()
     const [nomeEmpresa, setNomeEmpresa] = useState("Delivery Simple")
     const [pedidos, setPedidos] = useState([])
     const [pedidoLoading, setPedidoLoading] = useState(true)
@@ -45,16 +47,32 @@ function JanelaPedido({hidden}) {
     const [nome_cliente, setNomeCliente] = useState('')
     const [frm_pagamento, setFrmPagamento] = useState('')
     const [showModal, setShowModal] = useState(false)
-    const [hasPedido, setHasPedido] = useState(0)
+
+    //sound
+    const [audio] = useState(new Audio(window.location.origin+'/sounds/Chord.mp3'))
+
     const listBtnRefs = []
     const pedidoRef = useRef()
     const pedidoImpRef = useRef()
+    const socket = socketIOClient(Config.socketIo)
 
     useEffect(()=>{
-        const socket = socketIOClient(Config.socketIo)
+        if(hidden){
+            return
+        }
+
         socket.on('hasPedido', receivedInfo=>{
             if(receivedInfo){
-                setHasPedido(receivedInfo)
+                addToast(`Chegou um novo pedido: ${receivedInfo}`,{ 
+                    appearance: 'info', 
+                    autoDismiss: true, 
+                })
+                if(audio.played){
+                    audio.pause()
+                    audio.currentTime = 0
+                }
+                audio.play() 
+                HasPedido()
             }
         })
 
@@ -69,7 +87,20 @@ function JanelaPedido({hidden}) {
             return
         })
 
-    },[hasPedido, hidden])
+    },[hidden])
+
+    async function HasPedido(){
+        await Api.get('pedido/data/'+GetFormattedDateIni()+'/'+GetFormattedDateFim())
+            .then(response =>{
+            setPedidos(response.data)
+            setPedidoLoading(false)
+        }).catch(error=>{
+            console.log(error)
+            setPedidoLoading(false)
+            setShowModalConnection(true)
+            return
+        })
+    }
 
     function BuscarPedido(pedido = 0){
         if(pedido === undefined || pedido === ''){
@@ -149,7 +180,7 @@ function JanelaPedido({hidden}) {
         }
     }
 
-    function FinalizarPedido(id, indice){
+    function AtualizarEstadoPedido(id, indice){
         if(listBtnRefs[indice].textContent === 'Finalizar'){
             Api.put('pedido/'+id+'/registrar').then(response =>{
                 if(response.status === 200){
@@ -160,12 +191,19 @@ function JanelaPedido({hidden}) {
                         setPedidos(lista)
                         BtnFinalizadoStyle(indice)
                         listBtnRefs[indice].blur()
+                        
+                        addToast(`Pedido ${id} finalizado com sucesso!` , {
+                            appearance: 'success',
+                            autoDismiss: true,
+                        })
                     }
                 }
             }).catch(error=>{
                 console.log(error)
-                setShowModalConnection(true)
-                return
+                addToast(`Falha ao atualizar pedido ${id} para estado de finalizado! ${error.message}` , {
+                    appearance: 'error',
+                    autoDismiss: true,
+                })
             })
             return
         }
@@ -178,12 +216,19 @@ function JanelaPedido({hidden}) {
                         setPedidos(lista)
                         BtnRecebidoStyle(indice)
                         listBtnRefs[indice].blur()
+
+                        addToast(`Pedido ${id} recebido com sucesso!` , {
+                            appearance: 'success',
+                            autoDismiss: true,
+                        })
                     }
                 }
             }).catch(error=>{
                 console.log(error)
-                setShowModalConnection(true)
-                return
+                addToast(`Falha ao atualizar pedido ${id} para estado de recebido! ${error.message}` , {
+                    appearance: 'error',
+                    autoDismiss: true,
+                })
             })
         }
         listBtnRefs[indice].blur()
@@ -304,17 +349,17 @@ function JanelaPedido({hidden}) {
                                 <p style={{fontSize:20, width:'100%', marginBottom:5}}><strong>{Moeda(item.valor_total)}</strong></p>
                                 {
                                     item.entregue === 1 && item.recebido === 1
-                                    ? <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> FinalizarPedido(item.id, idx)} style={{background:'#47CE43', color:'#FFF', fontWeight:'bold', borderColor:'#47CE43', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }} >Entregue</Button>
+                                    ? <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> AtualizarEstadoPedido(item.id, idx)} style={{background:'#47CE43', color:'#FFF', fontWeight:'bold', borderColor:'#47CE43', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }} >Entregue</Button>
                                     : <span/>
                                 }
                                 {
                                     item.entregue === 0 && item.recebido === 1
-                                    ? <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> FinalizarPedido(item.id, idx)} style={{background:'#199cff', color:'#FFF', fontWeight:'bold', borderColor:'#199cff', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }} >Finalizar</Button>
+                                    ? <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> AtualizarEstadoPedido(item.id, idx)} style={{background:'#199cff', color:'#FFF', fontWeight:'bold', borderColor:'#199cff', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }} >Finalizar</Button>
                                     : <span/>
                                 } 
                                 {
                                     item.entregue === 0 && item.recebido === 0
-                                    ? <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> FinalizarPedido(item.id, idx)} style={{background:'#FFF', color:'#F43d', fontWeight:'bold', borderColor:'#F43d', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }}>Receber</Button> 
+                                    ? <Button ref={ref => listBtnRefs[idx] = ref} onClick={()=> AtualizarEstadoPedido(item.id, idx)} style={{background:'#FFF', color:'#F43d', fontWeight:'bold', borderColor:'#F43d', width:150, margin:5, height:40, borderRadius:8, borderStyle:'solid', borderWidth:1 }}>Receber</Button> 
                                     : <span/>
                                 }
                             </Col>
