@@ -256,13 +256,6 @@ const Dashboard = () =>{
     
     return(
         <div className="container-geral-pgdashboard">
-            <Navbar className="navbar-pgdashboard" fixed="top" bg="dark">
-                <Navbar.Brand>
-                    <span className="txt-navbar-pgdashboard">
-                        {nomeEmpresa}
-                    </span>
-                </Navbar.Brand>
-            </Navbar>
             <Row className="container-body-pgdashboard">
                 <Col md='3' className="container-menu-pgdashboard">
                     <Row className="container-logo-pgdashboard">
@@ -417,7 +410,14 @@ const Dashboard = () =>{
             <ModalConnection 
                 show={showModalConnection} 
                 onHide={()=> setShowModalConnection(false)}
-            /> 
+            />
+            <Navbar className="navbar-pgdashboard" bg="dark">
+                <Navbar.Brand>
+                    <span className="txt-navbar-pgdashboard">
+                        {nomeEmpresa}
+                    </span>
+                </Navbar.Brand>
+            </Navbar> 
             <Alert hidden={!showAlertLojaFechada} fixed="top" variant='warning' onClose={() => setShowAlertLojaFechada(false)} dismissible style={{marginBottom:0, textAlign:'center', position:'fixed', top:50, width:'100%'}}>
                 <strong>Atenção</strong>, sua loja esta como <strong>fechada</strong> ao publico!
             </Alert>
